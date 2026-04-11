@@ -14,6 +14,7 @@ env:
 tasks:
   check:
     desc: Validate templates and rendered config files
+    deps: [render]
     cmds:
       - ./openwrt/scripts/check.sh
 
@@ -24,7 +25,6 @@ tasks:
 
   render:
     desc: Decrypt secrets and render OpenWrt configs
-    deps: [check]
     cmds:
       - ./openwrt/scripts/render.sh
 
