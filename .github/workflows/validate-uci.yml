@@ -1,0 +1,25 @@
+name: Validate UCI config
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate UCI configs
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace openwrt/rootfs sh -c '
+            cd openwrt/files/config || exit 0
+            for file in *; do
+              if [ -f "$file" ]; then
+                echo "Checking $file..."
+                uci -c . show "$file" > /dev/null || exit 1
+              fi
+            done
+          '
