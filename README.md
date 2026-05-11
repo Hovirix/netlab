@@ -1,4 +1,3 @@
-
 # HX Net Lab
 
 Network-as-Code for managing and deploying OpenWrt firmware for my [homelab](https://github.com/hovirix/homelab) network infrastructure.
@@ -11,13 +10,13 @@ This repository provides a single source of truth for network configuration, ena
 
 ## Features
 
-* **Reproducible builds** – Pinned OpenWrt version with explicit target, subtarget, and profile
-* **Verified downloads** – Validates ImageBuilder checksum before extraction
-* **Secrets handling** – Decrypts SOPS files only at render time
-* **Template rendering** – Generates UCI configs using Gomplate
-* **Safe deployment** – Validates configuration with UCI
-* **CI lint checks** – ShellCheck on push and PRs
-* **Automated updates** – Weekly check for new OpenWrt releases with PR + issue
+- **Reproducible builds** – Pinned OpenWrt version with explicit target, subtarget, and profile
+- **Verified downloads** – Validates ImageBuilder checksum before extraction
+- **Secrets handling** – Decrypts SOPS files only at render time
+- **Template rendering** – Generates UCI configs using Gomplate
+- **Safe deployment** – Validates configuration with UCI
+- **Pre-commit quality gates** – Unified local formatting and linting before commits
+- **Automated updates** – Weekly check for new OpenWrt releases with PR + issue
 
 ## Workflow
 
@@ -26,10 +25,10 @@ render → check → setup → build → sysupgrade
 ```
 
 1. **render** – Decrypt secrets and generate configs
-2. **check** – Validate rendered configuration
-3. **setup** – Download and verify ImageBuilder
-4. **build** – Build firmware image
-5. **sysupgrade** – Flash router and reboot
+1. **check** – Validate rendered configuration
+1. **setup** – Download and verify ImageBuilder
+1. **build** – Build firmware image
+1. **sysupgrade** – Flash router and reboot
 
 > [!WARNING]
 > Sysupgrade will reboot your router.
@@ -46,7 +45,7 @@ render → check → setup → build → sysupgrade
 1. Prepare configuration.
    Files under `openwrt/files/` are copied into `/etc/` in the final image.
 
-2. Enter the development shell, or ensure all [dependencies](https://openwrt.org/docs/guide-user/additional-software/imagebuilder?s[]=openwrt#prerequisites) are installed:
+1. Enter the development shell, or ensure all [dependencies](https://openwrt.org/docs/guide-user/additional-software/imagebuilder?s%5B%5D=openwrt#prerequisites) are installed:
 
 ```bash
 nix develop
@@ -67,7 +66,7 @@ env:
   ROUTER_PORT: '22'
 ```
 
-4. Build firmware
+4. Build firmware (runs render + check + setup automatically)
 
 ```bash
 task build
@@ -102,8 +101,8 @@ openwrt/templates/*.tmpl
 openwrt/files/*
   └─ included in firmware (/etc/* on device)
 
-.github/workflows/lint.yml
-  └─ shell lint CI
+.pre-commit-config.yaml
+  └─ formatting and lint hooks
 
 .github/workflows/openwrt-update.yml
   └─ scheduled update detection and PR/issue creation
@@ -111,6 +110,19 @@ openwrt/files/*
 
 ## CI/CD
 
-* `lint.yml` – ShellCheck on push and pull requests
-* `openwrt-update.yml` – Weekly OpenWrt release check with automated PR + issue
+- `validate-uci.yml` – Renders template fixtures and validates UCI syntax
+- `openwrt-update.yml` – Weekly OpenWrt release check with automated PR + issue
 
+## Local pre-commit setup
+
+Install and enable hooks once per clone:
+
+```bash
+nix develop --command pre-commit install
+```
+
+Run all hooks manually:
+
+```bash
+nix develop --command pre-commit run --all-files
+```
