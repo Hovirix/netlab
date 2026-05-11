@@ -1,0 +1,6 @@
+map-e:
+  vlan_id: 100
+  peeraddr: "2001:db8::1"
+  ipaddr: 203.0.113.10
+  ip6prefix: "2001:db8:100::"
+  ip6prefixlen: 56

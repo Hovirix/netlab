@@ -14,37 +14,37 @@ REPO_ROOT="$(cd "$OPENWRT_DIR/.." && pwd)"
 KEEP_ARCHIVE="${KEEP_ARCHIVE:-1}"
 
 detect_host_suffix() {
-	local os arch
+  local os arch
 
-	os="$(uname -s)"
-	arch="$(uname -m)"
+  os="$(uname -s)"
+  arch="$(uname -m)"
 
-	case "$os-$arch" in
-	Linux-x86_64)
-		printf 'Linux-x86_64\n'
-		;;
-	Darwin-arm64)
-		printf 'Darwin-arm64\n'
-		;;
-	Darwin-x86_64)
-		printf 'Darwin-x86_64\n'
-		;;
-	*)
-		printf 'Error: unsupported host platform %s-%s\n' "$os" "$arch" >&2
-		printf 'Set OPENWRT_IMAGE_BUILDER manually if you have a compatible archive.\n' >&2
-		return 1
-		;;
-	esac
+  case "$os-$arch" in
+  Linux-x86_64)
+    printf 'Linux-x86_64\n'
+    ;;
+  Darwin-arm64)
+    printf 'Darwin-arm64\n'
+    ;;
+  Darwin-x86_64)
+    printf 'Darwin-x86_64\n'
+    ;;
+  *)
+    printf 'Error: unsupported host platform %s-%s\n' "$os" "$arch" >&2
+    printf 'Set OPENWRT_IMAGE_BUILDER manually if you have a compatible archive.\n' >&2
+    return 1
+    ;;
+  esac
 }
 
 HOST_SUFFIX="$(detect_host_suffix)"
 
 if [ "$OPENWRT_VERSION" = "snapshots" ]; then
-	DEFAULT_IMAGE_BUILDER="openwrt-imagebuilder-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}.${HOST_SUFFIX}"
-	OPENWRT_DOWNLOAD_ROOT="snapshots"
+  DEFAULT_IMAGE_BUILDER="openwrt-imagebuilder-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}.${HOST_SUFFIX}"
+  OPENWRT_DOWNLOAD_ROOT="snapshots"
 else
-	DEFAULT_IMAGE_BUILDER="openwrt-imagebuilder-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}.${HOST_SUFFIX}"
-	OPENWRT_DOWNLOAD_ROOT="releases/${OPENWRT_VERSION}"
+  DEFAULT_IMAGE_BUILDER="openwrt-imagebuilder-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}.${HOST_SUFFIX}"
+  OPENWRT_DOWNLOAD_ROOT="releases/${OPENWRT_VERSION}"
 fi
 
 IMAGE_BUILDER="${OPENWRT_IMAGE_BUILDER:-$DEFAULT_IMAGE_BUILDER}"
@@ -63,12 +63,12 @@ export KEEP_ARCHIVE HOST_SUFFIX IMAGE_BUILDER ARCHIVE BASE_URL ARCHIVE_URL SHA25
 export IMAGE_BUILDER_DIR ARCHIVE_PATH FILES_DIR CONFIG_DIR OPENWRT_DIR REPO_ROOT
 
 require_cmd() {
-	local cmd
+  local cmd
 
-	for cmd in "$@"; do
-		if ! command -v "$cmd" >/dev/null 2>&1; then
-			printf 'Error: required command "%s" not found in PATH\n' "$cmd" >&2
-			return 1
-		fi
-	done
+  for cmd in "$@"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      printf 'Error: required command "%s" not found in PATH\n' "$cmd" >&2
+      return 1
+    fi
+  done
 }

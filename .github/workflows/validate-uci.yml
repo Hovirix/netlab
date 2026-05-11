@@ -1,0 +1,45 @@
+name: Validate UCI config
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Render template-based UCI configs from fixtures
+        run: |
+          mkdir -p .ci-render
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace hairyhenderson/gomplate:stable \
+            -d network=file:///workspace/openwrt/testdata/network.yaml \
+            -d wireless=file:///workspace/openwrt/testdata/wireless.yaml \
+            -f /workspace/openwrt/templates/network.tmpl \
+            -o /workspace/.ci-render/network
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace hairyhenderson/gomplate:stable \
+            -d network=file:///workspace/openwrt/testdata/network.yaml \
+            -d wireless=file:///workspace/openwrt/testdata/wireless.yaml \
+            -f /workspace/openwrt/templates/wireless.tmpl \
+            -o /workspace/.ci-render/wireless
+
+      - name: Validate UCI configs
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace openwrt/rootfs sh -c '
+            cd .ci-render || exit 1
+            for file in network wireless; do
+              echo "Checking generated $file..."
+              uci -c . show "$file" > /dev/null || exit 1
+            done
+
+            cd /workspace/openwrt/files/config || exit 0
+            for file in *; do
+              if [ -f "$file" ]; then
+                echo "Checking static $file..."
+                uci -c . show "$file" > /dev/null || exit 1
+              fi
+            done
+          '

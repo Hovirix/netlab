@@ -14,13 +14,13 @@ WIRELESS_SECRET="${WIRELESS_SECRET:-$REPO_ROOT/secrets/wireless.sops.yaml}"
 require_cmd sops gomplate
 
 if [ ! -r "$NETWORK_SECRET" ]; then
-	printf 'Error: network secret file not found or unreadable: %s\n' "$NETWORK_SECRET" >&2
-	exit 1
+  printf 'Error: network secret file not found or unreadable: %s\n' "$NETWORK_SECRET" >&2
+  exit 1
 fi
 
 if [ ! -r "$WIRELESS_SECRET" ]; then
-	printf 'Error: wireless secret file not found or unreadable: %s\n' "$WIRELESS_SECRET" >&2
-	exit 1
+  printf 'Error: wireless secret file not found or unreadable: %s\n' "$WIRELESS_SECRET" >&2
+  exit 1
 fi
 
 tmp_dir="$(mktemp -d)"
@@ -28,7 +28,7 @@ network_yaml="$tmp_dir/network.yaml"
 wireless_yaml="$tmp_dir/wireless.yaml"
 
 cleanup() {
-	rm -rf "$tmp_dir"
+  rm -rf "$tmp_dir"
 }
 trap cleanup EXIT
 
@@ -40,16 +40,16 @@ sops -d "$WIRELESS_SECRET" >"$wireless_yaml"
 
 printf 'Rendering OpenWrt config templates\n'
 gomplate \
-	--datasource "network=file://$network_yaml" \
-	--datasource "wireless=file://$wireless_yaml" \
-	--file "$OPENWRT_DIR/templates/network.tmpl" \
-	--out "$CONFIG_DIR/network"
+  --datasource "network=file://$network_yaml" \
+  --datasource "wireless=file://$wireless_yaml" \
+  --file "$OPENWRT_DIR/templates/network.tmpl" \
+  --out "$CONFIG_DIR/network"
 
 gomplate \
-	--datasource "network=file://$network_yaml" \
-	--datasource "wireless=file://$wireless_yaml" \
-	--file "$OPENWRT_DIR/templates/wireless.tmpl" \
-	--out "$CONFIG_DIR/wireless"
+  --datasource "network=file://$network_yaml" \
+  --datasource "wireless=file://$wireless_yaml" \
+  --file "$OPENWRT_DIR/templates/wireless.tmpl" \
+  --out "$CONFIG_DIR/wireless"
 
 printf 'Rendered: %s/network\n' "$CONFIG_DIR"
 printf 'Rendered: %s/wireless\n' "$CONFIG_DIR"

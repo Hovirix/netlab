@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: local
+    hooks:
+      - id: treefmt
+        name: treefmt
+        entry: nix run .#formatter.x86_64-linux --
+        language: system
+
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck -x
+        language: system
+        files: ^openwrt/scripts/.*\.sh$
+
+      - id: actionlint
+        name: actionlint
+        entry: nix develop --command actionlint
+        language: system
+        files: ^\.github/workflows/.*\.(yml|yaml)$
