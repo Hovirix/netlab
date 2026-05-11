@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install go-task
         uses: arduino/setup-task@v2
@@ -24,33 +24,37 @@ jobs:
         id: check
         shell: bash
         run: |
-          set +e
           output="$(task check-update 2>&1)"
-          status=$?
-          set -e
 
           printf '%s\n' "$output"
 
           latest="$(printf '%s\n' "$output" | sed -n 's/^LATEST_OPENWRT_VERSION=//p' | tail -n 1)"
           current="$(sed -n "s/^  OPENWRT_VERSION: '\(.*\)'/\1/p" Taskfile.yml | tail -n 1)"
+          has_update=false
+          if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
+            has_update=true
+          fi
 
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          echo "latest=$latest" >> "$GITHUB_OUTPUT"
-          echo "current=$current" >> "$GITHUB_OUTPUT"
+          {
+            echo "latest=$latest"
+            echo "current=$current"
+            echo "has_update=$has_update"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Stop when already up to date
-        if: steps.check.outputs.status == '0'
+        if: steps.check.outputs.has_update != 'true'
         run: echo "No OpenWrt update available"
 
-      - name: Bump version in Taskfile
-        if: steps.check.outputs.status == '2'
+      - name: Bump version in Taskfile and README
+        if: steps.check.outputs.has_update == 'true'
         run: |
           sed -i "s/^  OPENWRT_VERSION: '.*'/  OPENWRT_VERSION: '${{ steps.check.outputs.latest }}'/" Taskfile.yml
+          sed -i "0,/^  OPENWRT_VERSION: '.*'/{s/^  OPENWRT_VERSION: '.*'/  OPENWRT_VERSION: '${{ steps.check.outputs.latest }}'/}" README.md
 
       - name: Create or update PR
-        if: steps.check.outputs.status == '2'
+        if: steps.check.outputs.has_update == 'true'
         id: cpr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: bump OpenWrt to ${{ steps.check.outputs.latest }}"
           branch: "ci/openwrt-update-${{ steps.check.outputs.latest }}"
@@ -61,13 +65,13 @@ jobs:
 
             - Current: `${{ steps.check.outputs.current }}`
             - Latest: `${{ steps.check.outputs.latest }}`
-            - Updated file: `Taskfile.yml`
+            - Updated files: `Taskfile.yml`, `README.md`
 
             Please review and merge.
 
       - name: Create issue for review
-        if: steps.check.outputs.status == '2'
-        uses: actions/github-script@v7
+        if: steps.check.outputs.has_update == 'true'
+        uses: actions/github-script@v9
         with:
           script: |
             const latest = `${{ steps.check.outputs.latest }}`;
