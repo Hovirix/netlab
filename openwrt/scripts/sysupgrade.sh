@@ -14,13 +14,22 @@ ROUTER_PORT="${ROUTER_PORT:-22}"
 require_cmd scp ssh
 
 artifact_dir="$IMAGE_BUILDER_DIR/bin/targets/$OPENWRT_TARGET/$OPENWRT_SUBTARGET"
-artifact_name="openwrt-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}-${OPENWRT_PROFILE}-squashfs-sysupgrade.bin"
-artifact_path="$artifact_dir/$artifact_name"
+artifact_glob="openwrt-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}-${OPENWRT_PROFILE}-squashfs-sysupgrade.*"
+artifact_path=""
 
-if [ ! -f "$artifact_path" ]; then
-  printf 'Error: expected sysupgrade image not found: %s\n' "$artifact_path" >&2
+for candidate in "$artifact_dir"/$artifact_glob; do
+  if [ -f "$candidate" ]; then
+    artifact_path="$candidate"
+    break
+  fi
+done
+
+if [ -z "$artifact_path" ]; then
+  printf 'Error: expected sysupgrade image not found matching: %s/%s\n' "$artifact_dir" "$artifact_glob" >&2
   exit 1
 fi
+
+artifact_name="$(basename "$artifact_path")"
 
 remote_path="/tmp/$artifact_name"
 
@@ -29,7 +38,7 @@ scp -O -P "$ROUTER_PORT" "$artifact_path" "$ROUTER_USER@$ROUTER_HOST:$remote_pat
 
 printf '\n!!! WARNING: This will reboot the router. Do not power it off during upgrade. !!!\n\n'
 read -r -p 'Are you sure you want to run sysupgrade? [y/N] ' confirm
-if [[ "$confirm" != [yY] ]]; then
+if [[ $confirm != [yY] ]]; then
   printf 'Aborted. Firmware was uploaded to %s\n' "$remote_path"
   exit 1
 fi

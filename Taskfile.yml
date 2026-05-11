@@ -30,7 +30,7 @@ tasks:
 
   build:
     desc: Build OpenWrt firmware image
-    deps: [setup, render]
+    deps: [setup, render, check]
     cmds:
       - ./openwrt/scripts/build.sh
 
@@ -39,11 +39,6 @@ tasks:
     deps: [build]
     cmds:
       - ./openwrt/scripts/sysupgrade.sh
-
-  lint:
-    desc: Lint shell scripts with shellcheck
-    cmds:
-      - shellcheck -x ./openwrt/scripts/*.sh
 
   check-update:
     desc: Check for newer OpenWrt release

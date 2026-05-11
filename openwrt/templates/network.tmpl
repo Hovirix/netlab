@@ -1,10 +1,10 @@
 {{- $network := ds "network" -}}
-{{- $mape := index $network "map-e" -}}
-{{- $vlan := index $mape "vlan_id" -}}
-{{- $peer := index $mape "peeraddr" -}}
-{{- $ip := index $mape "ipaddr" -}}
-{{- $prefix := index $mape "ip6prefix" -}}
-{{- $prefixlen := index $mape "ip6prefixlen" -}}
+{{- $map := index $network "map-e" -}}
+{{- $vlan := index $map "vlan_id" -}}
+{{- $peer := index $map "peeraddr" -}}
+{{- $ip := index $map "ipaddr" -}}
+{{- $prefix := index $map "ip6prefix" -}}
+{{- $prefixlen := index $map "ip6prefixlen" -}}
 
 config interface 'loopback'
 	option device 'lo'
