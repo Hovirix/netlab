@@ -1,10 +1,14 @@
 {{- $network := ds "network" -}}
 {{- $map := index $network "map-e" -}}
+{{- $wireguard := index $network "wireguard" -}}
 {{- $vlan := index $map "vlan_id" -}}
 {{- $peer := index $map "peeraddr" -}}
 {{- $ip := index $map "ipaddr" -}}
 {{- $prefix := index $map "ip6prefix" -}}
 {{- $prefixlen := index $map "ip6prefixlen" -}}
+{{- $wgServer := index $wireguard "server" -}}
+{{- $wgPeers := index $wireguard "peers" -}}
+{{- $wgServerPrivateKey := index $wgServer "private_key" -}}
 
 config interface 'loopback'
 	option device 'lo'
@@ -80,3 +84,19 @@ config interface 'wan'
 	option ip6prefix '{{ $prefix }}'
 	option ip6prefixlen '{{ $prefixlen }}'
 	option tunlink 'wan6'
+
+config interface 'vpn'
+	option proto 'wireguard'
+	option private_key '{{ $wgServerPrivateKey }}'
+	option listen_port '51820'
+	list addresses '10.255.0.1/24'
+
+{{- range $idx, $wgPeer := $wgPeers }}
+config wireguard_vpn
+	option description '{{ index $wgPeer "description" }}'
+	option public_key '{{ index $wgPeer "public_key" }}'
+	option preshared_key '{{ index $wgPeer "preshared_key" }}'
+	option route_allowed_ips '1'
+	list allowed_ips '{{ index $wgPeer "allowed_ip" }}'
+
+{{- end }}
