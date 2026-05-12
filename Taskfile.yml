@@ -49,8 +49,8 @@ tasks:
     desc: Remove imagebuilder and generated configs
     cmds:
       - rm -rf openwrt-imagebuilder-*
-      - rm -f ./openwrt/files/config/network
-      - rm -f ./openwrt/files/config/wireless
+      - rm -f ./openwrt/files/etc/config/network
+      - rm -f ./openwrt/files/etc/config/wireless
 
   deep-clean:
     desc: Remove imagebuilder, generated configs, and archives
