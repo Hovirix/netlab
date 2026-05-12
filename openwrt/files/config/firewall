@@ -88,6 +88,13 @@ config zone
 	option forward 'REJECT'
 	list network 'vlan30'
 
+config zone
+	option name 'vpn'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	list network 'vpn'
+
 config forwarding
 	option src 'vlan30'
 	option dest 'wan'
@@ -102,6 +109,13 @@ config rule
 	option src 'vlan30'
 	option name 'Allow-DNS-DHCP'
 	option dest_port '53 67 68'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-WireGuard'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '51820'
 	option target 'ACCEPT'
 
 config rule

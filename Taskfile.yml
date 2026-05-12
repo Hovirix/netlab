@@ -5,7 +5,7 @@ env:
   OPENWRT_TARGET: mediatek
   OPENWRT_SUBTARGET: filogic
   OPENWRT_PROFILE: glinet_gl-mt6000
-  OPENWRT_PACKAGES: 'adguardhome irqbalance map tailscale'
+  OPENWRT_PACKAGES: 'adguardhome irqbalance map kmod-wireguard wireguard-tools'
   KEEP_ARCHIVE: '1'
   ROUTER_HOST: 10.10.0.1
   ROUTER_USER: root

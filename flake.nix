@@ -45,6 +45,7 @@
             unzip
             python3
             python3Packages.distutils
+            wireguard-tools
           ];
         };
       };
