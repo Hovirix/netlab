@@ -43,5 +43,5 @@ if [[ $confirm != [yY] ]]; then
   exit 1
 fi
 
-printf 'Running sysupgrade on router\n'
-ssh -p "$ROUTER_PORT" "$ROUTER_USER@$ROUTER_HOST" "sysupgrade '$remote_path'"
+printf 'Running sysupgrade on router with factory-reset mode (-n)\n'
+ssh -p "$ROUTER_PORT" "$ROUTER_USER@$ROUTER_HOST" "sysupgrade -n '$remote_path'"

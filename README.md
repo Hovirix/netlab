@@ -31,7 +31,7 @@ render → check → setup → build → sysupgrade
 1. **sysupgrade** – Flash router and reboot
 
 > [!WARNING]
-> Sysupgrade will reboot your router.
+> Sysupgrade will reboot your router and reset existing config (`sysupgrade -n`).
 
 ## Configuration & Usage
 
@@ -96,7 +96,7 @@ secrets/*.sops.yaml
   └─ decrypted at runtime only
 
 openwrt/templates/*.tmpl
-  └─ rendered into openwrt/files/config/*
+  └─ rendered into openwrt/files/etc/config/*
 
 openwrt/files/*
   └─ included in firmware (/etc/* on device)
