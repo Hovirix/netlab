@@ -55,7 +55,7 @@ nix develop
 
 ```yaml
 env:
-  OPENWRT_VERSION: '25.12.2'
+  OPENWRT_VERSION: '25.12.3'
   OPENWRT_TARGET: mediatek
   OPENWRT_SUBTARGET: filogic
   OPENWRT_PROFILE: glinet_gl-mt6000
