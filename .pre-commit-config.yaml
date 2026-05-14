@@ -17,7 +17,7 @@ repos:
         name: shellcheck
         entry: shellcheck -x
         language: system
-        files: ^openwrt/scripts/.*\.sh$
+        files: ^scripts/.*\.sh$
 
       - id: actionlint
         name: actionlint

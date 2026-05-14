@@ -43,7 +43,7 @@ render → check → setup → build → sysupgrade
 ### Steps
 
 1. Prepare configuration.
-   Files under `openwrt/files/` are copied into `/etc/` in the final image.
+   Files under `files/` are copied into `/etc/` in the final image.
 
 1. Enter the development shell, or ensure all [dependencies](https://openwrt.org/docs/guide-user/additional-software/imagebuilder?s%5B%5D=openwrt#prerequisites) are installed:
 
@@ -82,23 +82,23 @@ task sysupgrade
 
 ```text
 Taskfile.yml
-  ├─ check         → openwrt/scripts/check.sh
-  ├─ render        → openwrt/scripts/render.sh
-  ├─ setup         → openwrt/scripts/setup.sh
-  ├─ build         → openwrt/scripts/build.sh
-  ├─ sysupgrade    → openwrt/scripts/sysupgrade.sh
-  └─ check-update  → openwrt/scripts/check-update.sh
+  ├─ check         → scripts/check.sh
+  ├─ render        → scripts/render.sh
+  ├─ setup         → scripts/setup.sh
+  ├─ build         → scripts/build.sh
+  ├─ sysupgrade    → scripts/sysupgrade.sh
+  └─ check-update  → scripts/check-update.sh
 
-openwrt/scripts/common.sh
+scripts/common.sh
   └─ shared configuration, host detection, paths, command checks
 
 secrets/*.sops.yaml
   └─ decrypted at runtime only
 
-openwrt/templates/*.tmpl
-  └─ rendered into openwrt/files/etc/config/*
+templates/*.tmpl
+  └─ rendered into files/etc/config/*
 
-openwrt/files/*
+files/*
   └─ included in firmware (/etc/* on device)
 
 .pre-commit-config.yaml

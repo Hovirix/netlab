@@ -42,13 +42,13 @@ printf 'Rendering OpenWrt config templates\n'
 gomplate \
   --datasource "network=file://$network_yaml" \
   --datasource "wireless=file://$wireless_yaml" \
-  --file "$OPENWRT_DIR/templates/network.tmpl" \
+  --file "$REPO_ROOT/templates/network.tmpl" \
   --out "$CONFIG_DIR/network"
 
 gomplate \
   --datasource "network=file://$network_yaml" \
   --datasource "wireless=file://$wireless_yaml" \
-  --file "$OPENWRT_DIR/templates/wireless.tmpl" \
+  --file "$REPO_ROOT/templates/wireless.tmpl" \
   --out "$CONFIG_DIR/wireless"
 
 printf 'Rendered: %s/network\n' "$CONFIG_DIR"

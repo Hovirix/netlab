@@ -21,12 +21,12 @@ the management path is safe.
 
 | File | Role |
 | --- | --- |
-| `openwrt/files/etc/config/network` | Interfaces, bridge VLANs, WAN, and WireGuard. |
-| `openwrt/files/etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
-| `openwrt/files/etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
-| `openwrt/files/etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
+| `files/etc/config/network` | Interfaces, bridge VLANs, WAN, and WireGuard. |
+| `files/etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
+| `files/etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
+| `files/etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
 
-Templates live under `openwrt/templates/`. When a template changes, render and
+Templates live under `templates/`. When a template changes, render and
 review the generated config before building firmware.
 
 ## Deployment Safety

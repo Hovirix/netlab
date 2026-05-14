@@ -16,41 +16,41 @@ tasks:
     desc: Validate templates and rendered config files
     deps: [render]
     cmds:
-      - ./openwrt/scripts/check.sh
+      - ./scripts/check.sh
 
   setup:
     desc: Download and verify OpenWrt image builder
     cmds:
-      - ./openwrt/scripts/setup.sh
+      - ./scripts/setup.sh
 
   render:
     desc: Decrypt secrets and render OpenWrt configs
     cmds:
-      - ./openwrt/scripts/render.sh
+      - ./scripts/render.sh
 
   build:
     desc: Build OpenWrt firmware image
     deps: [setup, render, check]
     cmds:
-      - ./openwrt/scripts/build.sh
+      - ./scripts/build.sh
 
   sysupgrade:
     desc: Deploy and run sysupgrade on router
     deps: [build]
     cmds:
-      - ./openwrt/scripts/sysupgrade.sh
+      - ./scripts/sysupgrade.sh
 
   check-update:
     desc: Check for newer OpenWrt release
     cmds:
-      - ./openwrt/scripts/check-update.sh
+      - ./scripts/check-update.sh
 
   clean:
     desc: Remove imagebuilder and generated configs
     cmds:
       - rm -rf openwrt-imagebuilder-*
-      - rm -f ./openwrt/files/etc/config/network
-      - rm -f ./openwrt/files/etc/config/wireless
+      - rm -f ./files/etc/config/network
+      - rm -f ./files/etc/config/wireless
 
   deep-clean:
     desc: Remove imagebuilder, generated configs, and archives

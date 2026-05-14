@@ -9,22 +9,21 @@ reading every firewall rule directly.
 | File | Purpose |
 | --- | --- |
 | [`zero-trust-network.md`](zero-trust-network.md) | VLAN model, trust boundaries, forwarding policy, and allowed flows. |
-| [`openwrt-operations.md`](openwrt-operations.md) | Deployment, validation, break-glass access, and change checklist. |
+| [`operations.md`](operations.md) | Deployment, validation, break-glass access, and change checklist. |
 
 ## Source Of Truth
 
-The rendered OpenWrt files live under `openwrt/files/etc/config/` and are copied
+The rendered OpenWrt files live under `files/etc/config/` and are copied
 into the firmware image.
 
-The generated network configuration is based on templates under
-`openwrt/templates/`.
+The generated network configuration is based on templates under `templates/`.
 
 | Config | Path |
 | --- | --- |
-| Network | `openwrt/files/etc/config/network` |
-| DHCP | `openwrt/files/etc/config/dhcp` |
-| Firewall | `openwrt/files/etc/config/firewall` |
-| Wireless | `openwrt/templates/wireless.tmpl` |
+| Network | `files/etc/config/network` |
+| DHCP | `files/etc/config/dhcp` |
+| Firewall | `files/etc/config/firewall` |
+| Wireless | `templates/wireless.tmpl` |
 
 ## Security Model
 

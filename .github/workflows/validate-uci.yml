@@ -16,14 +16,14 @@ jobs:
         run: |
           mkdir -p .ci-render
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace hairyhenderson/gomplate:stable \
-            -d network=file:///workspace/openwrt/testdata/network.yaml \
-            -d wireless=file:///workspace/openwrt/testdata/wireless.yaml \
-            -f /workspace/openwrt/templates/network.tmpl \
+            -d network=file:///workspace/tests/fixtures/network.yaml \
+            -d wireless=file:///workspace/tests/fixtures/wireless.yaml \
+            -f /workspace/templates/network.tmpl \
             -o /workspace/.ci-render/network
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace hairyhenderson/gomplate:stable \
-            -d network=file:///workspace/openwrt/testdata/network.yaml \
-            -d wireless=file:///workspace/openwrt/testdata/wireless.yaml \
-            -f /workspace/openwrt/templates/wireless.tmpl \
+            -d network=file:///workspace/tests/fixtures/network.yaml \
+            -d wireless=file:///workspace/tests/fixtures/wireless.yaml \
+            -f /workspace/templates/wireless.tmpl \
             -o /workspace/.ci-render/wireless
 
       - name: Validate UCI configs
@@ -35,7 +35,7 @@ jobs:
               uci -c . show "$file" > /dev/null || exit 1
             done
 
-            cd /workspace/openwrt/files/etc/config || exit 0
+            cd /workspace/files/etc/config || exit 0
             for file in *; do
               if [ -f "$file" ]; then
                 echo "Checking static $file..."
