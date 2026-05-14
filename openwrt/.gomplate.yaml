@@ -3,8 +3,8 @@ inputFiles:
   - ./templates/wireless.tmpl
 
 outputFiles:
-  - ./files/config/network
-  - ./files/config/wireless
+  - ./files/etc/config/network
+  - ./files/etc/config/wireless
 
 datasources:
   network:
