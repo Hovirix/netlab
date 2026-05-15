@@ -12,34 +12,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Render template-based UCI configs from fixtures
-        run: |
-          mkdir -p .ci-render
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace hairyhenderson/gomplate:stable \
-            -d network=file:///workspace/tests/fixtures/network.yaml \
-            -d wireless=file:///workspace/tests/fixtures/wireless.yaml \
-            -f /workspace/templates/network.tmpl \
-            -o /workspace/.ci-render/network
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace hairyhenderson/gomplate:stable \
-            -d network=file:///workspace/tests/fixtures/network.yaml \
-            -d wireless=file:///workspace/tests/fixtures/wireless.yaml \
-            -f /workspace/templates/wireless.tmpl \
-            -o /workspace/.ci-render/wireless
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v19
 
-      - name: Validate UCI configs
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace openwrt/rootfs sh -c '
-            cd .ci-render || exit 1
-            for file in network wireless; do
-              echo "Checking generated $file..."
-              uci -c . show "$file" > /dev/null || exit 1
-            done
-
-            cd /workspace/files/etc/config || exit 0
-            for file in *; do
-              if [ -f "$file" ]; then
-                echo "Checking static $file..."
-                uci -c . show "$file" > /dev/null || exit 1
-              fi
-            done
-          '
+      - name: Run flake checks
+        run: nix flake check

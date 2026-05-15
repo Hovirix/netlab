@@ -17,39 +17,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install go-task
-        uses: arduino/setup-task@v2
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v19
 
       - name: Check for new OpenWrt release
         id: check
         shell: bash
         run: |
-          output="$(task check-update 2>&1)"
+          output="$(nix run .#check-update 2>&1)"
 
           printf '%s\n' "$output"
 
           latest="$(printf '%s\n' "$output" | sed -n 's/^LATEST_OPENWRT_VERSION=//p' | tail -n 1)"
-          current="$(sed -n "s/^  OPENWRT_VERSION: '\(.*\)'/\1/p" Taskfile.yml | tail -n 1)"
-          has_update=false
-          if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
-            has_update=true
+          current="$(printf '%s\n' "$output" | sed -n 's/^CURRENT_OPENWRT_VERSION=//p' | tail -n 1)"
+          has_update="$(printf '%s\n' "$output" | sed -n 's/^OPENWRT_UPDATE_AVAILABLE=//p' | tail -n 1)"
+          imagebuilder_hash="$(printf '%s\n' "$output" | sed -n 's/^IMAGEBUILDER_HASH=//p' | tail -n 1)"
+
+          if [ -z "$has_update" ]; then
+            has_update=false
           fi
 
           {
             echo "latest=$latest"
             echo "current=$current"
             echo "has_update=$has_update"
+            echo "imagebuilder_hash=$imagebuilder_hash"
           } >> "$GITHUB_OUTPUT"
 
       - name: Stop when already up to date
         if: steps.check.outputs.has_update != 'true'
         run: echo "No OpenWrt update available"
 
-      - name: Bump version in Taskfile and README
+      - name: Bump version and imagebuilder hash in config
         if: steps.check.outputs.has_update == 'true'
         run: |
-          sed -i "s/^  OPENWRT_VERSION: '.*'/  OPENWRT_VERSION: '${{ steps.check.outputs.latest }}'/" Taskfile.yml
-          sed -i "0,/^  OPENWRT_VERSION: '.*'/{s/^  OPENWRT_VERSION: '.*'/  OPENWRT_VERSION: '${{ steps.check.outputs.latest }}'/}" README.md
+          sed -i "s/^ *openwrtVersion = \".*\";/  openwrtVersion = \"${{ steps.check.outputs.latest }}\";/" config.nix
+          sed -i "s|^ *imageBuilderHash = \".*\";|  imageBuilderHash = \"${{ steps.check.outputs.imagebuilder_hash }}\";|" config.nix
 
       - name: Create or update PR
         if: steps.check.outputs.has_update == 'true'
@@ -65,7 +68,7 @@ jobs:
 
             - Current: `${{ steps.check.outputs.current }}`
             - Latest: `${{ steps.check.outputs.latest }}`
-            - Updated files: `Taskfile.yml`, `README.md`
+            - Updated files: `config.nix`
 
             Please review and merge.
 
