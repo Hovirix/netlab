@@ -11,23 +11,22 @@ This repository provides a single source of truth for network configuration, ena
 ## Features
 
 - **Reproducible builds** – Pinned OpenWrt version with explicit target, subtarget, and profile
-- **Verified downloads** – Validates ImageBuilder checksum before extraction
-- **Secrets handling** – Decrypts SOPS files only at render time
-- **Template rendering** – Generates UCI configs using Gomplate
-- **Safe deployment** – Validates configuration with UCI
+- **Verified ImageBuilder source** – Fetches OpenWrt ImageBuilder with fixed Nix hash
+- **Secrets handling** – Decrypts SOPS files only during local build runtime
+- **Template rendering** – Generates UCI configs using Gomplate at build time
+- **Safe deployment** – Keeps sysupgrade as an explicit manual step
 - **Pre-commit quality gates** – Unified local formatting and linting before commits
 - **Automated updates** – Weekly check for new OpenWrt releases with PR + issue
 
 ## Workflow
 
 ```text
-render → check → setup → build → sysupgrade
+apply (check-update -> check -> build -> sysupgrade)
 ```
 
-1. **render** – Decrypt secrets and generate configs
-1. **check** – Validate rendered configuration
-1. **setup** – Download and verify ImageBuilder
-1. **build** – Build firmware image
+1. **check-update** – Warn if a newer OpenWrt release exists
+1. **flake check** – Validate formatting and fixture-based UCI rendering
+1. **build** – Render secrets locally and build firmware image
 1. **sysupgrade** – Flash router and reboot
 
 > [!WARNING]
@@ -38,7 +37,7 @@ render → check → setup → build → sysupgrade
 ### Prerequisites
 
 > [!NOTE]
-> If you do not manage secrets or provision them at runtime, remove `render` from the Taskfile.
+> `nix run .#build` requires readable SOPS secret files in `secrets/`.
 
 ### Steps
 
@@ -51,58 +50,76 @@ render → check → setup → build → sysupgrade
 nix develop
 ```
 
-3. Configure environment
+3. Optional runtime overrides
 
 ```yaml
 env:
-  OPENWRT_VERSION: '25.12.2'
-  OPENWRT_TARGET: mediatek
-  OPENWRT_SUBTARGET: filogic
-  OPENWRT_PROFILE: glinet_gl-mt6000
-  OPENWRT_PACKAGES: 'adguardhome irqbalance map tailscale'
-  KEEP_ARCHIVE: '1'
   ROUTER_HOST: 10.10.0.1
   ROUTER_USER: root
   ROUTER_PORT: '22'
+  NETWORK_SECRET: /path/to/network.sops.yaml
+  WIRELESS_SECRET: /path/to/wireless.sops.yaml
 ```
 
-4. Build firmware (runs render + check + setup automatically)
+4. Build firmware
 
 ```bash
-task build
+nix flake check
+nix run .#build
 ```
 
 5. Deploy firmware
 
 ```bash
-task sysupgrade
+nix run .#sysupgrade
 ```
+
+Or run the full pipeline with one command:
+
+```bash
+nix run .#apply
+```
+
+6. Cleanup is automatic on commit via pre-commit hook (generated artifacts).
 
 ## Architecture
 
 ```text
-Taskfile.yml
-  ├─ check         → scripts/check.sh
-  ├─ render        → scripts/render.sh
-  ├─ setup         → scripts/setup.sh
-  ├─ build         → scripts/build.sh
-  ├─ sysupgrade    → scripts/sysupgrade.sh
-  └─ check-update  → scripts/check-update.sh
+flake.nix
+  ├─ apps          → apps/build.nix
+  └─ checks        → apps/test.nix
 
-scripts/common.sh
-  └─ shared configuration, host detection, paths, command checks
+apps/build.nix
+  ├─ build         → render secrets + build firmware
+  └─ fetchurl      → pinned OpenWrt ImageBuilder source
+
+apps/deploy.nix
+  └─ sysupgrade    → deploy image to router
+
+apps/check-update.nix
+  └─ check-update  → detect new OpenWrt release
+
+apps/apply.nix
+  └─ apply         → check-update -> check -> build -> sysupgrade
+
+apps/test.nix
+  ├─ formatting    → treefmt-nix
+  └─ uci           → fixture render + UCI syntax validation
 
 secrets/*.sops.yaml
   └─ decrypted at runtime only
 
 templates/*.tmpl
-  └─ rendered into files/etc/config/*
+  └─ rendered into files/etc/config/{network,wireless}
 
 files/*
   └─ included in firmware (/etc/* on device)
 
+tests/fixtures/*
+  └─ non-secret datasource fixtures for syntax checks
+
 .pre-commit-config.yaml
-  └─ formatting and lint hooks
+  └─ cleanup, formatting, and lint hooks
 
 .github/workflows/openwrt-update.yml
   └─ scheduled update detection and PR/issue creation
@@ -110,7 +127,7 @@ files/*
 
 ## CI/CD
 
-- `validate-uci.yml` – Renders template fixtures and validates UCI syntax
+- `validate-uci.yml` – Runs `nix flake check` (formatting + UCI validation)
 - `openwrt-update.yml` – Weekly OpenWrt release check with automated PR + issue
 
 ## Local pre-commit setup

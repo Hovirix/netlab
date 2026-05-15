@@ -8,14 +8,18 @@ network policy.
 The repository workflow is:
 
 ```text
-render -> check -> setup -> build -> sysupgrade
+apply (check-update -> check -> build -> sysupgrade)
 ```
 
-Use `task build` to render templates, validate configuration, prepare the
-ImageBuilder, and build the firmware image.
+Use `nix flake check` for repository validation and `nix run .#build` for local
+secret rendering plus firmware build.
 
-Use `task sysupgrade` only after reviewing the generated files and confirming
-the management path is safe.
+Use `nix run .#sysupgrade` only after reviewing the generated files and
+confirming the management path is safe.
+
+Generated config and build artifacts are cleaned automatically on commit via pre-commit.
+
+Use `nix run .#apply` for the full end-to-end flow.
 
 ## Generated Files
 
@@ -26,8 +30,7 @@ the management path is safe.
 | `files/etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
 | `files/etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
 
-Templates live under `templates/`. When a template changes, render and
-review the generated config before building firmware.
+Templates live under `templates/`. When a template changes, run `nix flake check` and then `nix run .#build` to verify generated config and firmware.
 
 ## Deployment Safety
 
@@ -50,13 +53,20 @@ access are both tested.
 Run repository checks before building:
 
 ```bash
-task check
+nix flake check
 ```
 
 Run a full local build:
 
 ```bash
-task build
+nix flake check
+nix run .#build
+```
+
+Run full apply (warn on updates and continue):
+
+```bash
+nix run .#apply
 ```
 
 After deploying to the router, validate firewall syntax before restarting it:
@@ -117,7 +127,7 @@ The intended wireless placement is:
 | 2.4 GHz | `vlan50` |
 | 5 GHz | `vlan10` |
 
-After rendering, confirm generated wireless config matches the template. A
+After building, confirm generated wireless config matches the template. A
 stale rendered file can place untrusted clients on the wrong VLAN.
 
 ## Change Checklist
