@@ -8,16 +8,16 @@ repos:
 
   - repo: local
     hooks:
+      - id: clean-generated-artifacts
+        name: clean generated artifacts
+        entry: bash -c 'rm -rf ./build-output && rm -f ./files/etc/config/network ./files/etc/config/wireless'
+        language: system
+        pass_filenames: false
+
       - id: treefmt
         name: treefmt
         entry: nix run .#formatter.x86_64-linux --
         language: system
-
-      - id: shellcheck
-        name: shellcheck
-        entry: shellcheck -x
-        language: system
-        files: ^openwrt/scripts/.*\.sh$
 
       - id: actionlint
         name: actionlint

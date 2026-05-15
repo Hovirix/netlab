@@ -1,10 +1,9 @@
 {
-  description = "HX Net Lab dev shell";
+  description = "HX Net Lab";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-
   };
 
   outputs =
@@ -16,38 +15,39 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
+      config = import ./config.nix;
       treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
 
+      moduleArgs = {
+        inherit pkgs config;
+        treefmtCheck = treefmtEval.config.build.check self;
+      };
+
+      modules = map (module: import module moduleArgs) [
+        ./apps/apply.nix
+        ./apps/build.nix
+        ./apps/check-update.nix
+        ./apps/deploy.nix
+        ./devshell.nix
+        ./apps/test.nix
+      ];
+
+      mergeModule = acc: module: {
+        apps = acc.apps // (module.apps or { });
+        checks = acc.checks // (module.checks or { });
+        devShells = acc.devShells // (module.devShells or { });
+      };
+
+      merged = builtins.foldl' mergeModule {
+        apps = { };
+        checks = { };
+        devShells = { };
+      } modules;
     in
     {
       formatter.${system} = treefmtEval.config.build.wrapper;
-
-      checks.${system} = {
-        formatting = treefmtEval.config.build.check self;
-      };
-
-      devShells.${system} = {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            uci
-            actionlint
-            shellcheck
-            bash-language-server
-            go-task
-            pre-commit
-            treefmt
-            sops
-            shfmt
-            wget
-            gnumake
-            gomplate
-            gzip
-            unzip
-            python3
-            python3Packages.distutils
-            wireguard-tools
-          ];
-        };
-      };
+      apps.${system} = merged.apps;
+      checks.${system} = merged.checks;
+      devShells.${system} = merged.devShells;
     };
 }

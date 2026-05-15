@@ -1,5 +1,5 @@
 /.direnv
-/openwrt-imagebuilder-25.12.2-mediatek-filogic.Linux-x86_64
-/openwrt-imagebuilder-25.12.2-mediatek-filogic.Linux-x86_64.tar.zst
-/openwrt/files/etc/config/network
-/openwrt/files/etc/config/wireless
+/openwrt-imagebuilder-*
+/build-output
+/files/etc/config/network
+/files/etc/config/wireless
