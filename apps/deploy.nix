@@ -10,9 +10,6 @@ let
     routerUser
     routerPort
     ;
-
-  repoRoot = toString ../.;
-
   appSysupgrade = pkgs.writeShellApplication {
     name = "sysupgrade";
 
@@ -24,7 +21,8 @@ let
     text = ''
       set -euo pipefail
 
-      artifact_dir='${repoRoot}/build-output/targets/${openwrtTarget}/${openwrtSubtarget}'
+      output_dir="''${BUILD_OUTPUT_DIR:-$PWD/build-output}"
+      artifact_dir="$output_dir/targets/${openwrtTarget}/${openwrtSubtarget}"
       artifact_glob="openwrt-${openwrtVersion}-${openwrtTarget}-${openwrtSubtarget}-${openwrtProfile}-squashfs-sysupgrade.*"
       artifact_path=""
 
@@ -76,5 +74,6 @@ in
   apps.sysupgrade = {
     type = "app";
     program = "${appSysupgrade}/bin/sysupgrade";
+    meta.description = "Deploy OpenWrt sysupgrade image";
   };
 }

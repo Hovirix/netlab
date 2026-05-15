@@ -5,8 +5,6 @@ let
   inherit (config) openwrtSubtarget;
   inherit (config) openwrtProfile;
   inherit (config) openwrtPackages;
-
-  repoRoot = toString ../.;
   hostSuffix = "Linux-x86_64";
   imageBuilder = "openwrt-imagebuilder-${openwrtVersion}-${openwrtTarget}-${openwrtSubtarget}.${hostSuffix}";
   archive = "${imageBuilder}.tar.zst";
@@ -51,11 +49,13 @@ let
     text = ''
       set -euo pipefail
 
-      repo_root='${repoRoot}'
-      files_dir="$repo_root/files"
+      tmp_dir="$(mktemp -d)"
+      trap 'rm -rf "$tmp_dir"' EXIT
+
+      files_dir="$tmp_dir/files"
       config_dir="$files_dir/etc/config"
-      network_secret="''${NETWORK_SECRET:-$repo_root/secrets/network.sops.yaml}"
-      wireless_secret="''${WIRELESS_SECRET:-$repo_root/secrets/wireless.sops.yaml}"
+      network_secret="''${NETWORK_SECRET:-$PWD/secrets/network.sops.yaml}"
+      wireless_secret="''${WIRELESS_SECRET:-$PWD/secrets/wireless.sops.yaml}"
 
       if [ ! -r "$network_secret" ]; then
         printf 'Error: network secret file not found or unreadable: %s\n' "$network_secret" >&2
@@ -67,14 +67,10 @@ let
       fi
 
       printf 'Running repository checks before build\n'
-      nix flake check "$repo_root"
+      nix flake check
 
-      tmp_dir="$(mktemp -d)"
-      cleanup() {
-        rm -rf "$tmp_dir"
-      }
-      trap cleanup EXIT
-
+      cp -R "${../files}" "$files_dir"
+      chmod -R u+w "$files_dir"
       mkdir -p "$config_dir"
 
       network_yaml="$tmp_dir/network.yaml"
@@ -99,7 +95,7 @@ let
       cp -R "${imageBuilderStore}" "$build_root"
       chmod -R u+w "$build_root"
 
-      output_dir="$repo_root/build-output"
+      output_dir="''${BUILD_OUTPUT_DIR:-$PWD/build-output}"
       rm -rf "$output_dir"
       mkdir -p "$output_dir"
 
@@ -118,5 +114,6 @@ in
   apps.build = {
     type = "app";
     program = "${appBuild}/bin/build";
+    meta.description = "Build OpenWrt firmware image";
   };
 }
