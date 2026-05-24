@@ -22,7 +22,7 @@ let
       set -euo pipefail
 
       output_dir="''${BUILD_OUTPUT_DIR:-$PWD/build-output}"
-      artifact_dir="$output_dir/targets/${openwrtTarget}/${openwrtSubtarget}"
+      artifact_dir="$output_dir"
       artifact_glob="openwrt-${openwrtVersion}-${openwrtTarget}-${openwrtSubtarget}-${openwrtProfile}-squashfs-sysupgrade.*"
       artifact_path=""
 

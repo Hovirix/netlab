@@ -120,6 +120,13 @@ config rule
 	option target 'ACCEPT'
 
 config rule
+	option name 'Allow-VLAN10-to-Router-AdGuard-UI'
+	option src 'vlan10'
+	option proto 'tcp'
+	option dest_port '3000'
+	option target 'ACCEPT'
+
+config rule
 	option name 'Allow-VLAN10-to-Router-SSH'
 	option src 'vlan10'
 	option proto 'tcp'

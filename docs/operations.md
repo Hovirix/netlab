@@ -42,6 +42,7 @@ Before deploying, verify these access paths:
 | Local admin | Admin client can get DHCP on `vlan10`. |
 | Router SSH | `vlan10 -> router` TCP `22` works. |
 | Router HTTPS | `vlan10 -> router` TCP `443` works if LuCI or HTTPS admin is used. |
+| AdGuard Home UI | `vlan10 -> router` TCP `3000` works. |
 | WireGuard | WAN UDP `51820` reaches the router. |
 | VPN management | VPN peer can reach router SSH/HTTPS and required infra services. |
 
@@ -87,9 +88,9 @@ After applying a new image, test from each zone.
 
 | Zone | Expected Result |
 | --- | --- |
-| `vlan10` | DHCP, DNS, WAN, router SSH/HTTPS, Proxmox, TrueNAS, Talos, Kubernetes. |
+| `vlan10` | DHCP, DNS, WAN, router SSH/HTTPS, AdGuard Home UI, Proxmox, TrueNAS, Talos, Kubernetes. |
 | `vlan20` | Static IP, DNS, WAN, SMB to TrueNAS. |
-| `vlan30` | Static IP, DNS, WAN. |
+| `vlan30` | DHCP, DNS, WAN. |
 | `vlan40` | DHCP, DNS, WAN, SMB to TrueNAS. |
 | `vlan50` | DHCP, DNS, WAN only. |
 | `vlan60` | DHCP and DNS only, no WAN and no internal access. |
@@ -117,6 +118,9 @@ interfaces. Required router DNS listener addresses are:
 | 60 | `10.60.0.1` |
 
 If DNS fails on a VLAN while DHCP works, check AdGuard Home binding first.
+
+The AdGuard Home web UI is bound to `10.10.0.1:3000` and should only be
+reachable from `vlan10`.
 
 ## Wireless Checks
 
