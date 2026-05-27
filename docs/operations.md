@@ -100,6 +100,22 @@ For `vlan60`, DNS responses may still work because AdGuard Home runs on the
 router. Direct Internet access should fail because there is no `vlan60 -> wan`
 forwarding.
 
+## WAN DHCPv6 Lease Refresh
+
+The ISP-provided DHCPv6 lease for `wan6` lasts about 2.5 hours. If `wan6` is not
+refreshed before the lease expires, the MAP-E uplink can become unroutable even
+though the interface still appears configured.
+
+The image enables `cron` and installs a root crontab that restarts `wan6` every
+2 hours:
+
+```text
+0 */2 * * * /sbin/ifdown wan6; sleep 5; /sbin/ifup wan6
+```
+
+After deploying, confirm `cron` is running and the `wan6` lease refresh does not
+interrupt expected MAP-E routing longer than the planned interface restart.
+
 ## AdGuard Home
 
 AdGuard Home is the DNS service for internal clients. `dnsmasq` has DNS disabled

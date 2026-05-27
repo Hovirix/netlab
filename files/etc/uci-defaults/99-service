@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+/etc/init.d/cron enable || true
+/etc/init.d/cron start || true
+
 /etc/init.d/adguardhome enable || true
 /etc/init.d/adguardhome start || true
 
