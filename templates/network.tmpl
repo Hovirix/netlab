@@ -140,7 +140,6 @@ config wireguard_vpn
 	option description '{{ index $wgPeer "description" }}'
 	option public_key '{{ index $wgPeer "public_key" }}'
 	option preshared_key '{{ index $wgPeer "preshared_key" }}'
-	option route_allowed_ips '1'
 	list allowed_ips '{{ index $wgPeer "allowed_ip" }}'
 
 {{- end }}
