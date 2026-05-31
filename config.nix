@@ -1,10 +1,10 @@
 {
-  openwrtVersion = "25.12.2";
+  openwrtVersion = "25.12.4";
   openwrtTarget = "mediatek";
   openwrtSubtarget = "filogic";
   openwrtProfile = "glinet_gl-mt6000";
   openwrtPackages = "adguardhome irqbalance luci-ssl map kmod-wireguard wireguard-tools qrencode luci-proto-wireguard";
-  imageBuilderHash = "sha256-/n8Dt0jvac4L4RgvJ+PnLj3VJGMovQlB5CdKg3pWFCw=";
+  imageBuilderHash = "sha256-ggfanWifAtQoM+Toq8nqu07GOkM6eiZHMpbT0sSJ4lc=";
 
   routerHost = "10.10.0.1";
   routerUser = "root";
