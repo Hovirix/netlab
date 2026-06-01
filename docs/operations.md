@@ -138,6 +138,10 @@ If DNS fails on a VLAN while DHCP works, check AdGuard Home binding first.
 The AdGuard Home web UI is bound to the admin gateway `10.10.0.1:3000` and
 should only be reachable from `vlan10` and `vpn` by firewall policy.
 
+The AdGuard Home admin user is rendered from `templates/adguardhome.yaml.tmpl`
+using `secrets/adguardhome.sops.yaml`. Store the AdGuardHome bcrypt password
+hash in `user.password_hash`; do not store a plaintext password in the secret.
+
 ## Wireless Checks
 
 The intended wireless placement is:

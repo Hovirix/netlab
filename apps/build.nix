@@ -54,8 +54,10 @@ let
 
       files_dir="$tmp_dir/files"
       config_dir="$files_dir/etc/config"
+      adguardhome_dir="$files_dir/etc/adguardhome"
       network_secret="''${NETWORK_SECRET:-$PWD/secrets/network.sops.yaml}"
       wireless_secret="''${WIRELESS_SECRET:-$PWD/secrets/wireless.sops.yaml}"
+      adguardhome_secret="''${ADGUARDHOME_SECRET:-$PWD/secrets/adguardhome.sops.yaml}"
 
       if [ ! -r "$network_secret" ]; then
         printf 'Error: network secret file not found or unreadable: %s\n' "$network_secret" >&2
@@ -65,6 +67,10 @@ let
         printf 'Error: wireless secret file not found or unreadable: %s\n' "$wireless_secret" >&2
         exit 1
       fi
+      if [ ! -r "$adguardhome_secret" ]; then
+        printf 'Error: AdGuardHome secret file not found or unreadable: %s\n' "$adguardhome_secret" >&2
+        exit 1
+      fi
 
       printf 'Running repository checks before build\n'
       nix flake check
@@ -72,24 +78,34 @@ let
       cp -R "${../files}" "$files_dir"
       chmod -R u+w "$files_dir"
       mkdir -p "$config_dir"
+      mkdir -p "$adguardhome_dir"
 
       network_yaml="$tmp_dir/network.yaml"
       wireless_yaml="$tmp_dir/wireless.yaml"
+      adguardhome_yaml="$tmp_dir/adguardhome.yaml"
       sops -d "$network_secret" > "$network_yaml"
       sops -d "$wireless_secret" > "$wireless_yaml"
+      sops -d "$adguardhome_secret" > "$adguardhome_yaml"
 
       printf 'Rendering OpenWrt config templates\n'
       gomplate \
         --datasource "network=file://$network_yaml" \
         --datasource "wireless=file://$wireless_yaml" \
+        --datasource "adguardhome=file://$adguardhome_yaml" \
         --file "${../templates/network.tmpl}" \
         --out "$config_dir/network"
 
       gomplate \
         --datasource "network=file://$network_yaml" \
         --datasource "wireless=file://$wireless_yaml" \
+        --datasource "adguardhome=file://$adguardhome_yaml" \
         --file "${../templates/wireless.tmpl}" \
         --out "$config_dir/wireless"
+
+      gomplate \
+        --datasource "adguardhome=file://$adguardhome_yaml" \
+        --file "${../templates/adguardhome.yaml.tmpl}" \
+        --out "$adguardhome_dir/adguardhome.yaml"
 
       build_root="$tmp_dir/imagebuilder"
       cp -R "${imageBuilderStore}" "$build_root"

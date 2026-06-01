@@ -1,5 +1,13 @@
+{{- $adguardhome := ds "adguardhome" -}}
+{{- $user := index $adguardhome "user" -}}
+{{- $userName := index $user "name" -}}
+{{- $passwordHash := index $user "password_hash" -}}
 http:
   address: 10.10.0.1:3000
+
+users:
+  - name: "{{ $userName }}"
+    password: "{{ $passwordHash }}"
 
 dns:
   # General settings

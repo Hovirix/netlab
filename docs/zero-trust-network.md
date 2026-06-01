@@ -87,7 +87,8 @@ DNS is served by AdGuard Home on the router. `dnsmasq` has `option port '0'`, so
 it provides DHCP only and does not listen on port `53`.
 
 AdGuard Home's web UI is bound to the admin gateway `10.10.0.1:3000` and is
-only allowed by firewall policy from `vlan10` and `vpn`.
+only allowed by firewall policy from `vlan10` and `vpn`. UI authentication is
+rendered from SOPS-managed credentials during firmware build.
 
 ## Management Flows
 

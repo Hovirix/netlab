@@ -38,6 +38,7 @@ apply (check-update -> check -> build -> sysupgrade)
 
 > [!NOTE]
 > `nix run .#build` requires readable SOPS secret files in `secrets/`.
+> `.sops.yaml` configures encryption for `secrets/*.sops.yaml`.
 
 ### Steps
 
@@ -59,6 +60,7 @@ env:
   ROUTER_PORT: '22'
   NETWORK_SECRET: /path/to/network.sops.yaml
   WIRELESS_SECRET: /path/to/wireless.sops.yaml
+  ADGUARDHOME_SECRET: /path/to/adguardhome.sops.yaml
 ```
 
 4. Build firmware
@@ -66,6 +68,12 @@ env:
 ```bash
 nix flake check
 nix run .#build
+```
+
+Encrypt or update a secret file with:
+
+```bash
+sops --encrypt --in-place secrets/adguardhome.sops.yaml
 ```
 
 5. Deploy firmware
@@ -110,7 +118,7 @@ secrets/*.sops.yaml
   └─ decrypted at runtime only
 
 templates/*.tmpl
-  └─ rendered into files/etc/config/{network,wireless}
+  └─ rendered into files/etc/config/{network,wireless} and files/etc/adguardhome/adguardhome.yaml
 
 files/*
   └─ included in firmware (/etc/* on device)

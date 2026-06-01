@@ -7,24 +7,32 @@
 let
   inherit (config) openwrtVersion;
 
-  renderFixtureUci = pkgs.runCommand "render-fixture-uci" { buildInputs = [ pkgs.gomplate ]; } ''
+  renderFixtureFiles = pkgs.runCommand "render-fixture-files" { buildInputs = [ pkgs.gomplate ]; } ''
     mkdir -p "$out"
     gomplate \
       --datasource "network=file://${../tests/fixtures/network.yaml}" \
       --datasource "wireless=file://${../tests/fixtures/wireless.yaml}" \
+      --datasource "adguardhome=file://${../tests/fixtures/adguardhome.yaml}" \
       --file "${../templates/network.tmpl}" \
       --out "$out/network"
 
     gomplate \
       --datasource "network=file://${../tests/fixtures/network.yaml}" \
       --datasource "wireless=file://${../tests/fixtures/wireless.yaml}" \
+      --datasource "adguardhome=file://${../tests/fixtures/adguardhome.yaml}" \
       --file "${../templates/wireless.tmpl}" \
       --out "$out/wireless"
+
+    gomplate \
+      --datasource "adguardhome=file://${../tests/fixtures/adguardhome.yaml}" \
+      --file "${../templates/adguardhome.yaml.tmpl}" \
+      --out "$out/adguardhome.yaml"
   '';
 
   validateUci = pkgs.runCommand "validate-uci" { buildInputs = [ pkgs.uci ]; } ''
-    uci -c "${renderFixtureUci}" -q show network >/dev/null
-    uci -c "${renderFixtureUci}" -q show wireless >/dev/null
+    uci -c "${renderFixtureFiles}" -q show network >/dev/null
+    uci -c "${renderFixtureFiles}" -q show wireless >/dev/null
+    test -s "${renderFixtureFiles}/adguardhome.yaml"
 
     for file in ${../files/etc/config}/*; do
       if [ -f "$file" ]; then

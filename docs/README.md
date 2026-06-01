@@ -13,8 +13,8 @@ reading every firewall rule directly.
 
 ## Source Of Truth
 
-The rendered OpenWrt files live under `files/etc/config/` and are copied
-into the firmware image.
+The rendered OpenWrt files live under `files/etc/config/` and
+`files/etc/adguardhome/`, then are copied into the firmware image.
 
 The generated network configuration is based on templates under `templates/`.
 
@@ -24,6 +24,7 @@ The generated network configuration is based on templates under `templates/`.
 | DHCP | `files/etc/config/dhcp` |
 | Firewall | `files/etc/config/firewall` |
 | Wireless | `templates/wireless.tmpl` |
+| AdGuardHome | `templates/adguardhome.yaml.tmpl` |
 
 ## Security Model
 
