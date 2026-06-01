@@ -94,7 +94,7 @@ After applying a new image, test from each zone.
 | `vlan40` | DHCP, DNS, WAN, SMB to TrueNAS. |
 | `vlan50` | DHCP, DNS, WAN only. |
 | `vlan60` | DHCP and DNS only, no WAN and no internal access. |
-| `vpn` | WAN plus router, Proxmox, TrueNAS, Talos, and Kubernetes management. |
+| `vpn` | WAN plus router, AdGuard Home UI, Proxmox, TrueNAS, Talos, and Kubernetes management. |
 
 For `vlan60`, DNS responses may still work because AdGuard Home runs on the
 router. Direct Internet access should fail because there is no `vlan60 -> wan`
@@ -135,8 +135,8 @@ interfaces. Required router DNS listener addresses are:
 
 If DNS fails on a VLAN while DHCP works, check AdGuard Home binding first.
 
-The AdGuard Home web UI is bound to `10.10.0.1:3000` and should only be
-reachable from `vlan10`.
+The AdGuard Home web UI is bound to the admin gateway `10.10.0.1:3000` and
+should only be reachable from `vlan10` and `vpn` by firewall policy.
 
 ## Wireless Checks
 

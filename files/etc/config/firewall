@@ -264,6 +264,13 @@ config rule
 	option target 'ACCEPT'
 
 config rule
+	option name 'Allow-VPN-to-Router-AdGuard-UI'
+	option src 'vpn'
+	option proto 'tcp'
+	option dest_port '3000'
+	option target 'ACCEPT'
+
+config rule
 	option name 'Allow-VPN-to-Router-DNS-TCP'
 	option src 'vpn'
 	option proto 'tcp'
