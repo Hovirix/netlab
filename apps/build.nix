@@ -38,6 +38,7 @@ let
       pkgs.nix
       pkgs.sops
       pkgs.gomplate
+      pkgs.gitMinimal
       pkgs.gnumake
       pkgs.coreutils
       pkgs.findutils
@@ -55,9 +56,10 @@ let
       files_dir="$tmp_dir/files"
       config_dir="$files_dir/etc/config"
       adguardhome_dir="$files_dir/etc/adguardhome"
-      network_secret="''${NETWORK_SECRET:-$PWD/secrets/network.sops.yaml}"
-      wireless_secret="''${WIRELESS_SECRET:-$PWD/secrets/wireless.sops.yaml}"
-      adguardhome_secret="''${ADGUARDHOME_SECRET:-$PWD/secrets/adguardhome.sops.yaml}"
+      repo_root="''${NETLAB_ROOT:-$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD")}"
+      network_secret="''${NETWORK_SECRET:-$repo_root/secrets/network.sops.yaml}"
+      wireless_secret="''${WIRELESS_SECRET:-$repo_root/secrets/wireless.sops.yaml}"
+      adguardhome_secret="''${ADGUARDHOME_SECRET:-$repo_root/secrets/adguardhome.sops.yaml}"
 
       if [ ! -r "$network_secret" ]; then
         printf 'Error: network secret file not found or unreadable: %s\n' "$network_secret" >&2
@@ -111,7 +113,7 @@ let
       cp -R "${imageBuilderStore}" "$build_root"
       chmod -R u+w "$build_root"
 
-      output_dir="''${BUILD_OUTPUT_DIR:-$PWD/build-output}"
+      output_dir="''${BUILD_OUTPUT_DIR:-$repo_root/build-output}"
       rm -rf "$output_dir"
       mkdir -p "$output_dir"
 

@@ -39,6 +39,8 @@ apply (check-update -> check -> build -> sysupgrade)
 > [!NOTE]
 > `nix run .#build` requires readable SOPS secret files in `secrets/`.
 > `.sops.yaml` configures encryption for `secrets/*.sops.yaml`.
+> Default secret and output paths resolve from the Git worktree root, not the
+> current shell directory.
 
 ### Steps
 
@@ -61,6 +63,8 @@ env:
   NETWORK_SECRET: /path/to/network.sops.yaml
   WIRELESS_SECRET: /path/to/wireless.sops.yaml
   ADGUARDHOME_SECRET: /path/to/adguardhome.sops.yaml
+  NETLAB_ROOT: /path/to/netlab
+  BUILD_OUTPUT_DIR: /path/to/build-output
 ```
 
 4. Build firmware
