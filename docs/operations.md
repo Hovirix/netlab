@@ -89,9 +89,9 @@ After applying a new image, test from each zone.
 | Zone | Expected Result |
 | --- | --- |
 | `vlan10` | DHCP, DNS, WAN, router SSH/HTTPS, AdGuard Home UI, Proxmox, TrueNAS, Talos, Kubernetes. |
-| `vlan20` | Static IP, DNS, WAN, SMB to TrueNAS. |
+| `vlan20` | Static IP, DNS, WAN, NFSv4 to TrueNAS. |
 | `vlan30` | DHCP, DNS, WAN. |
-| `vlan40` | DHCP, DNS, WAN, SMB to TrueNAS. |
+| `vlan40` | DHCP, DNS, WAN, NFSv4 to TrueNAS. |
 | `vlan50` | DHCP, DNS, WAN only. |
 | `vlan60` | DHCP and DNS only, no WAN and no internal access. |
 | `vpn` | WAN plus router, AdGuard Home UI, Proxmox, TrueNAS, Talos, and Kubernetes management. |
@@ -158,6 +158,21 @@ The intended wireless placement is:
 After building, confirm generated wireless config matches the template. A
 stale rendered file can place untrusted clients on the wrong VLAN.
 
+## Wake-on-LAN
+
+The image includes `etherwake` for admin-triggered Wake-on-LAN from the router
+CLI. This does not expose a network service or change firewall policy.
+
+Run WoL on the bridge/interface for the target host's VLAN:
+
+```bash
+etherwake -i br-lan.<vlan-id> aa:bb:cc:dd:ee:ff
+```
+
+Only use WoL for hosts whose firmware and NIC are configured to accept magic
+packets. Keep WoL invocation on trusted admin paths unless an explicit, audited
+trigger is added later.
+
 ## Change Checklist
 
 When adding a new VLAN:
@@ -193,6 +208,58 @@ Recommended controls:
 - Remove lost or retired peer keys immediately.
 - Keep Proxmox, TrueNAS, and SSH authentication strong even when the VPN works.
 
+### WireGuard Secret Rotation
+
+Use the WireGuard rotation app to update `secrets/network.sops.yaml`. The tool
+does not print private keys or preshared keys.
+
+Rotate one peer preshared key:
+
+```bash
+nix run .#rotate-secrets -- --peer laptop
+```
+
+Rotate every peer preshared key:
+
+```bash
+nix run .#rotate-secrets -- --all-peer-psks
+```
+
+Replace a peer keypair and emit a full-tunnel client config:
+
+```bash
+nix run .#rotate-secrets -- --replace-peer laptop --showconfig
+```
+
+Replace a peer keypair and show the full-tunnel client config as a terminal QR
+code:
+
+```bash
+nix run .#rotate-secrets -- --replace-peer laptop --qr
+```
+
+The client config and QR code contain the peer private key and preshared key.
+Store them securely and do not leave terminal scrollback exposed. The generated
+client config uses full-tunnel routing with `AllowedIPs = 0.0.0.0/0, ::/0`.
+The endpoint is read from `wireguard.server.endpoint` in
+`secrets/network.sops.yaml`, or can be overridden with `--endpoint host:51820`.
+
+Rotating the router WireGuard server key is disruptive because every client must
+be updated with the new server public key. The command requires explicit
+confirmation:
+
+```bash
+nix run .#rotate-secrets -- --server --confirm-disruptive
+```
+
+After any WireGuard secret rotation:
+
+1. Update affected client configs before relying on VPN access.
+1. Run `nix flake check`.
+1. Build and deploy the firmware.
+1. Verify WireGuard access from each affected peer.
+1. Keep a local `vlan10` management path available until VPN access is confirmed.
+
 ## Future Tightening
 
 The current policy is zone-scoped. It can be tightened later with stable IPs.
@@ -204,7 +271,7 @@ Recommended next restrictions:
 | Admin to Proxmox | Limit `src_ip` to admin clients and `dest_ip` to Proxmox nodes. |
 | Admin to TrueNAS | Limit `src_ip` to admin clients and `dest_ip` to TrueNAS. |
 | VPN to infra | Limit by WireGuard peer IP. |
-| SMB to TrueNAS | Limit `dest_ip` to TrueNAS and sources to exact Proxmox/Kubernetes hosts. |
+| NFSv4 to TrueNAS | Limit `dest_ip` to TrueNAS and sources to exact Proxmox/Kubernetes hosts. |
 | Router admin | Limit SSH/HTTPS to admin laptop and trusted VPN peers. |
 
 Do not add broad rules for convenience without documenting the reason and the
