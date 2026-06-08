@@ -111,8 +111,8 @@ rendered from SOPS-managed credentials during firmware build.
 
 | Rule | Source | Destination | Port | Purpose |
 | --- | --- | --- | --- | --- |
-| `Allow-VLAN20-to-VLAN30-SMB` | `vlan20` | `vlan30` | TCP `445` | Proxmox to TrueNAS SMB storage. |
-| `Allow-VLAN40-to-VLAN30-SMB` | `vlan40` | `vlan30` | TCP `445` | Kubernetes to TrueNAS SMB storage. |
+| `Allow-VLAN20-to-VLAN30-NFSv4` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
+| `Allow-VLAN40-to-VLAN30-NFSv4` | `vlan40` | `vlan30` | TCP `2049` | Kubernetes to TrueNAS NFSv4 storage. |
 
 ## Wireless Placement
 

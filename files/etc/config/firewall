@@ -381,19 +381,19 @@ config rule
 	option target 'ACCEPT'
 
 config rule
-	option name 'Allow-VLAN20-to-VLAN30-SMB'
+	option name 'Allow-VLAN20-to-VLAN30-NFSv4'
 	option src 'vlan20'
 	option dest 'vlan30'
 	option proto 'tcp'
-	option dest_port '445'
+	option dest_port '2049'
 	option target 'ACCEPT'
 
 config rule
-	option name 'Allow-VLAN40-to-VLAN30-SMB'
+	option name 'Allow-VLAN40-to-VLAN30-NFSv4'
 	option src 'vlan40'
 	option dest 'vlan30'
 	option proto 'tcp'
-	option dest_port '445'
+	option dest_port '2049'
 	option target 'ACCEPT'
 
 config rule
