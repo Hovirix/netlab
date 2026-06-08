@@ -184,6 +184,14 @@ config rule
 	option target 'ACCEPT'
 
 config rule
+	option name 'Allow-VLAN30-to-Router-DHCP'
+	option src 'vlan30'
+	option proto 'udp'
+	option src_port '68'
+	option dest_port '67'
+	option target 'ACCEPT'
+
+config rule
 	option name 'Allow-VLAN40-to-Router-DNS-TCP'
 	option src 'vlan40'
 	option proto 'tcp'

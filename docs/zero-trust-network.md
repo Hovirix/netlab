@@ -19,7 +19,7 @@ source, destination, protocol, and destination port.
 | VLAN | Zone | Gateway | DHCP | WAN | Purpose |
 | ---: | --- | --- | --- | --- | --- |
 | 10 | `vlan10` | `10.10.0.1/24` | yes | yes | Admin clients and physical backup access. |
-| 20 | `vlan20` | `10.20.0.1/24` | no | yes | Proxmox host management. |
+| 20 | `vlan20` | `10.20.0.1/24` | no | yes | Mini PC and Proxmox host management. |
 | 30 | `vlan30` | `10.30.0.1/24` | yes | yes | TrueNAS and storage services. |
 | 40 | `vlan40` | `10.40.0.1/24` | yes | yes | Talos Linux and Kubernetes nodes. |
 | 50 | `vlan50` | `10.50.0.1/24` | yes | yes | Untrusted Wi-Fi and client devices. |
@@ -32,15 +32,16 @@ The `vpn` zone is a WireGuard interface, not a VLAN. It is separate from
 
 | Port | Mode | VLANs |
 | --- | --- | --- |
-| `lan1` | trunk | `10`, `20`, `30`, `40`, `50`, `60` |
-| `lan2` | trunk | `10`, `20`, `30`, `40`, `50`, `60` |
+| `lan1` | trunk | untagged `20`; tagged `10`, `30`, `40`, `50`, `60` |
+| `lan2` | trunk | untagged `20`; tagged `10`, `30`, `40`, `50`, `60` |
 | `lan3` | access | untagged `30` |
-| `lan4` | trunk | `10`, `20`, `30`, `40`, `50`, `60` |
+| `lan4` | unused | none |
 | `lan5` | access | untagged `10` |
 
-`lan3` is the direct TrueNAS port and lands on the storage VLAN. `lan5` is the
-physical backup access port. Keep `lan5` physically trusted because it lands
-directly on the admin VLAN.
+`lan1` and `lan2` are mini PC trunks with native management on `vlan20` and
+tagged workload VLANs. `lan3` is the direct TrueNAS port and lands on the
+storage VLAN. `lan5` is the physical backup access port. Keep `lan5` physically
+trusted because it lands directly on the admin VLAN.
 
 ## Zone Policy
 
@@ -77,7 +78,7 @@ services.
 | `wan` | WireGuard UDP `51820`, DHCPv6, required ICMPv6. |
 | `vlan10` | HTTPS `443`, SSH `22`, AdGuard Home UI TCP `3000`, DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vlan20` | DNS TCP/UDP `53`. |
-| `vlan30` | DNS TCP/UDP `53`. |
+| `vlan30` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vlan40` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vlan50` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vlan60` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |

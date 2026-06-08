@@ -34,15 +34,13 @@ config bridge-vlan
 	option vlan '10'
 	list ports 'lan1:t'
 	list ports 'lan2:t'
-	list ports 'lan4:t'
 	list ports 'lan5:u*'
 
 config bridge-vlan
 	option device 'br-lan'
 	option vlan '20'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-	list ports 'lan4:t'
+	list ports 'lan1:u*'
+	list ports 'lan2:u*'
 
 config bridge-vlan
 	option device 'br-lan'
@@ -50,28 +48,24 @@ config bridge-vlan
 	list ports 'lan1:t'
 	list ports 'lan2:t'
 	list ports 'lan3:u*'
-	list ports 'lan4:t'
 
 config bridge-vlan
 	option device 'br-lan'
 	option vlan '40'
 	list ports 'lan1:t'
 	list ports 'lan2:t'
-	list ports 'lan4:t'
 
 config bridge-vlan
 	option device 'br-lan'
 	option vlan '50'
 	list ports 'lan1:t'
 	list ports 'lan2:t'
-	list ports 'lan4:t'
 
 config bridge-vlan
 	option device 'br-lan'
 	option vlan '60'
 	list ports 'lan1:t'
 	list ports 'lan2:t'
-	list ports 'lan4:t'
 
 config interface 'vlan10'
 	option proto 'static'

@@ -39,6 +39,8 @@ Before deploying, verify these access paths:
 | Path | Required Before Hardening |
 | --- | --- |
 | Physical backup | `lan5` provides untagged access to `vlan10`. |
+| Mini PC trunks | `lan1` and `lan2` provide untagged `vlan20` plus tagged workload VLANs. |
+| TrueNAS access | `lan3` provides untagged DHCP access to `vlan30`. |
 | Local admin | Admin client can get DHCP on `vlan10`. |
 | Router SSH | `vlan10 -> router` TCP `22` works. |
 | Router HTTPS | `vlan10 -> router` TCP `443` works if LuCI or HTTPS admin is used. |

@@ -1,6 +1,7 @@
 config dnsmasq 'main'
 	option port '0'
 	list interface 'vlan10'
+	list interface 'vlan30'
 	list interface 'vlan40'
 	list interface 'vlan50'
 	list interface 'vlan60'
