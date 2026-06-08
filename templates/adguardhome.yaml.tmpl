@@ -39,69 +39,7 @@ dns:
 filtering:
   protection_enabled: true
   filtering_enabled: true
-
   blocking_mode: refused
-
-  rewrites:
-    - domain: "*.home.hovirix.dev"
-      answer: 10.20.0.10
-      enabled: true
-
-    - domain: "compute-01.home.hovirix.dev"
-      answer: 10.10.0.11
-      enabled: true
-
-    - domain: "infra-01.home.hovirix.dev"
-      answer: 10.10.0.10
-      enabled: true
-
-    - domain: "prod-apps-01.home.hovirix.dev"
-      answer: 10.20.0.100
-      enabled: true
-
-    - domain: "prod-data-01.home.hovirix.dev"
-      answer: 10.20.0.50
-      enabled: true
-
-    - domain: "prod-edge-01.home.hovirix.dev"
-      answer: 10.20.0.10
-      enabled: true
-
-    - domain: "prod-idp-01.home.hovirix.dev"
-      answer: 10.20.0.11
-      enabled: true
-
-    - domain: "prod-monitoring-01.home.hovirix.dev"
-      answer: 10.10.0.50
-      enabled: true
-
-    - domain: "authentik.internal.home.hovirix.dev"
-      answer: 10.20.0.11
-      enabled: true
-
-    - domain: "grafana.internal.home.hovirix.dev"
-      answer: 10.10.0.50
-      enabled: true
-
-    - domain: "immich.internal.home.hovirix.dev"
-      answer: 10.20.0.100
-      enabled: true
-
-    - domain: "paperless.internal.home.hovirix.dev"
-      answer: 10.20.0.100
-      enabled: true
-
-    - domain: "postgres.internal.home.hovirix.dev"
-      answer: 10.20.0.50
-      enabled: true
-
-    - domain: "valkey.internal.home.hovirix.dev"
-      answer: 10.20.0.50
-      enabled: true
-
-    - domain: "vaultwarden.internal.home.hovirix.dev"
-      answer: 10.20.0.100
-      enabled: true
 
 querylog:
   enabled: true
