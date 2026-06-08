@@ -32,16 +32,16 @@ The `vpn` zone is a WireGuard interface, not a VLAN. It is separate from
 
 | Port | Mode | VLANs |
 | --- | --- | --- |
-| `lan1` | trunk | untagged `20`; tagged `10`, `30`, `40`, `50`, `60` |
-| `lan2` | trunk | untagged `20`; tagged `10`, `30`, `40`, `50`, `60` |
+| `lan1` | trunk | tagged `10`, `20`, `30`, `40`, `50`, `60` |
+| `lan2` | trunk | tagged `10`, `20`, `30`, `40`, `50`, `60` |
 | `lan3` | access | untagged `30` |
 | `lan4` | unused | none |
 | `lan5` | access | untagged `10` |
 
-`lan1` and `lan2` are mini PC trunks with native management on `vlan20` and
-tagged workload VLANs. `lan3` is the direct TrueNAS port and lands on the
-storage VLAN. `lan5` is the physical backup access port. Keep `lan5` physically
-trusted because it lands directly on the admin VLAN.
+`lan1` and `lan2` are full tagged trunks for mini PCs. `lan3` is the direct
+TrueNAS port and lands on the storage VLAN. `lan5` is the physical backup access
+port. Keep `lan5` physically trusted because it lands directly on the admin
+VLAN.
 
 ## Zone Policy
 
