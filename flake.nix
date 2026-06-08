@@ -28,6 +28,7 @@
         ./apps/build.nix
         ./apps/check-update.nix
         ./apps/deploy.nix
+        ./apps/rotate-secrets.nix
         ./devshell.nix
         ./apps/test.nix
       ];
