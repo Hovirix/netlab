@@ -118,6 +118,10 @@ Common types:
 - `ci`: CI workflow changes
 - `build`: build system or dependency changes
 
+Avoid the `openwrt` scope in commit messages and PR titles because OpenWrt is
+the primary component of this repository. Prefer the specific subsystem scope,
+such as `firewall`, `vpn`, `dns`, `wireless`, `build`, or no scope.
+
 For PRs:
 
 - The PR title must use the same Conventional Commit format.
