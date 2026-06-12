@@ -13,18 +13,19 @@ reading every firewall rule directly.
 
 ## Source Of Truth
 
-The rendered OpenWrt files live under `files/etc/config/` and
-`files/etc/adguardhome/`, then are copied into the firmware image.
+The rendered OpenWrt files live under `build/staged-files/`, then are passed to
+OpenWrt ImageBuilder. That directory is disposable and should not be committed.
 
-The generated network configuration is based on templates under `templates/`.
+Non-secret policy lives under `config/`. Secrets live under `secrets/`. Runtime
+files are generated from templates under `templates/`.
 
 | Config | Path |
 | --- | --- |
-| Network | `files/etc/config/network` |
-| DHCP | `files/etc/config/dhcp` |
-| Firewall | `files/etc/config/firewall` |
-| Wireless | `templates/wireless.tmpl` |
-| AdGuardHome | `templates/adguardhome.yaml.tmpl` |
+| Network policy | `config/network.yaml` + `templates/network.tmpl` |
+| DHCP | `config/network.yaml` + `templates/dhcp.tmpl` |
+| Firewall | `config/firewall.yaml` + `templates/firewall.tmpl` |
+| Wireless | `templates/wireless.tmpl` + `secrets/wireless.sops.yaml` |
+| AdGuardHome | `templates/adguardhome.yaml.tmpl` + `secrets/adguardhome.sops.yaml` |
 
 ## Security Model
 

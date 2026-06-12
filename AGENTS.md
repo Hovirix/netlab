@@ -9,26 +9,30 @@ Your job is to maintain the network configuration following a zero-trust model.
 
 The project uses the OpenWrt ImageBuilder to build the final firmware.
 
-- All files under `files/etc` are baked into the final image and are the main configuration.
-- Templates under `templates/` render files that contain sensitive secrets from `secrets/`.
-- `apps/` contains Nix apps for the build pipeline.
+- `config/*.yaml` contains non-secret network, DHCP, and firewall policy.
+- `config/openwrt.env` contains OpenWrt target, package, ImageBuilder, and router deploy settings.
+- `secrets/*.sops.yaml` contains SOPS-managed secrets.
+- `templates/` renders OpenWrt runtime files into `build/staged-files/`.
+- `files/` contains static files copied into the staged firmware tree.
+- Nix is only used for `nix develop` tool provisioning.
 
 ## Build Pipeline
 
-Everything is managed with Nix and is built as follows.
+Everything is managed with Taskfile and plain shell scripts as follows.
 
-1. `check-update.nix`: checks whether a new version of OpenWrt is released.
-1. `test.nix`: tests templates and validates UCI configs.
-1. `build.nix`: renders templates into a temporary staged image files tree and builds the image.
-1. `deploy.nix`: runs `sysupgrade` on the router.
+1. `task check-update`: checks whether a new version of OpenWrt is released.
+1. `task test`: renders fixture data and validates UCI configs.
+1. `task render`: renders templates into `build/staged-files/`.
+1. `task build`: builds the firmware image.
+1. `task deploy`: runs `sysupgrade` on the router.
 
-> `apply.nix` is a wrapper for the build pipeline.
+> `task apply` is a wrapper for the build pipeline.
 
 ## Reviewing Model
 
 - Check the changes to the config files using Git.
 - Assess any illogical configuration or misconfiguration against the current session, network model, and security model.
-- Suggest `nix flake check` as the manual validation command.
+- Suggest `task test` as the manual validation command.
 - Output structured tables for changes in each category, such as VLANs, WAN, or VPN.
 
 ## Network Model

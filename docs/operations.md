@@ -8,29 +8,29 @@ network policy.
 The repository workflow is:
 
 ```text
-apply (check-update -> check -> build -> sysupgrade)
+apply (check-update -> test -> render -> build -> deploy)
 ```
 
-Use `nix flake check` for repository validation and `nix run .#build` for local
-secret rendering plus firmware build.
+Use `task test` for repository validation and `task build` for local secret
+rendering plus firmware build.
 
-Use `nix run .#sysupgrade` only after reviewing the generated files and
+Use `task deploy` only after reviewing the generated files and
 confirming the management path is safe.
 
-Generated config and build artifacts are cleaned automatically on commit via pre-commit.
+Generated config and build artifacts are written under `build/`.
 
-Use `nix run .#apply` for the full end-to-end flow.
+Use `task apply` for the full end-to-end flow.
 
 ## Generated Files
 
 | File | Role |
 | --- | --- |
-| `files/etc/config/network` | Interfaces, bridge VLANs, WAN, and WireGuard. |
-| `files/etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
-| `files/etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
-| `files/etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
+| `build/staged-files/etc/config/network` | Interfaces, bridge VLANs, WAN, and WireGuard. |
+| `build/staged-files/etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
+| `build/staged-files/etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
+| `build/staged-files/etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
 
-Templates live under `templates/`. When a template changes, run `nix flake check` and then `nix run .#build` to verify generated config and firmware.
+Templates live under `templates/`. When a template changes, run `task test` and then `task build` to verify generated config and firmware.
 
 ## Deployment Safety
 
@@ -56,20 +56,19 @@ access are both tested.
 Run repository checks before building:
 
 ```bash
-nix flake check
+task test
 ```
 
 Run a full local build:
 
 ```bash
-nix flake check
-nix run .#build
+task build
 ```
 
 Run full apply (warn on updates and continue):
 
 ```bash
-nix run .#apply
+task apply
 ```
 
 After deploying to the router, validate firewall syntax before restarting it:
@@ -179,10 +178,10 @@ trigger is added later.
 
 When adding a new VLAN:
 
-1. Add the bridge VLAN to `network` or `network.tmpl`.
+1. Add the bridge VLAN to `config/network.yaml`.
 1. Add the interface with a stable gateway address.
 1. Add DHCP only if the VLAN should hand out addresses.
-1. Add a firewall zone with `input DROP`, `output ACCEPT`, and `forward REJECT`.
+1. Add a firewall zone with `input DROP`, `output ACCEPT`, and `forward REJECT` in `config/firewall.yaml`.
 1. Add WAN forwarding only if the VLAN should have Internet access.
 1. Add router input rules only for required local services.
 1. Add cross-zone rules only for required source, destination, protocol, and port.
@@ -212,32 +211,32 @@ Recommended controls:
 
 ### WireGuard Secret Rotation
 
-Use the WireGuard rotation app to update `secrets/network.sops.yaml`. The tool
+Use the WireGuard rotation task to update `secrets/network.sops.yaml`. The tool
 does not print private keys or preshared keys.
 
 Rotate one peer preshared key:
 
 ```bash
-nix run .#rotate-secrets -- --peer laptop
+task rotate-secrets -- --peer laptop
 ```
 
 Rotate every peer preshared key:
 
 ```bash
-nix run .#rotate-secrets -- --all-peer-psks
+task rotate-secrets -- --all-peer-psks
 ```
 
 Replace a peer keypair and emit a full-tunnel client config:
 
 ```bash
-nix run .#rotate-secrets -- --replace-peer laptop --showconfig
+task rotate-secrets -- --replace-peer laptop --showconfig
 ```
 
 Replace a peer keypair and show the full-tunnel client config as a terminal QR
 code:
 
 ```bash
-nix run .#rotate-secrets -- --replace-peer laptop --qr
+task rotate-secrets -- --replace-peer laptop --qr
 ```
 
 The client config and QR code contain the peer private key and preshared key.
@@ -251,13 +250,13 @@ be updated with the new server public key. The command requires explicit
 confirmation:
 
 ```bash
-nix run .#rotate-secrets -- --server --confirm-disruptive
+task rotate-secrets -- --server --confirm-disruptive
 ```
 
 After any WireGuard secret rotation:
 
 1. Update affected client configs before relying on VPN access.
-1. Run `nix flake check`.
+1. Run `task test`.
 1. Build and deploy the firmware.
 1. Verify WireGuard access from each affected peer.
 1. Keep a local `vlan10` management path available until VPN access is confirmed.
