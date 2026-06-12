@@ -14,15 +14,9 @@ repos:
         language: system
         pass_filenames: false
 
-      - id: shfmt
-        name: shfmt
-        entry: nix develop --command shfmt -w scripts
-        language: system
-        files: ^scripts/.*\.sh$
-
-      - id: task-test
-        name: task test
-        entry: nix develop --command task test
+      - id: treefmt
+        name: treefmt
+        entry: nix fmt
         language: system
         pass_filenames: false
 

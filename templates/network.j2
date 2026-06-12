@@ -1,0 +1,103 @@
+# -----------------------------------------------------------------------------
+# --- LOOPBACK ---
+# -----------------------------------------------------------------------------
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	list ipaddr '127.0.0.1/8'
+
+# -----------------------------------------------------------------------------
+# --- GLOBALS ---
+# -----------------------------------------------------------------------------
+
+config globals 'globals'
+	option ula_prefix 'auto'
+	option packet_steering '2'
+
+# -----------------------------------------------------------------------------
+# --- DEVICES ---
+# -----------------------------------------------------------------------------
+
+config device
+	option name '{{ network.bridge.name }}'
+	option type 'bridge'
+{% for port in network.bridge.ports %}
+	list ports '{{ port }}'
+{% endfor %}
+	option ipv6 '0'
+
+# -----------------------------------------------------------------------------
+# --- BRIDGE VLANS ---
+# -----------------------------------------------------------------------------
+
+{% for bridge_vlan in network.bridge.vlans %}
+config bridge-vlan
+	option device '{{ network.bridge.name }}'
+	option vlan '{{ bridge_vlan.id }}'
+{% for port in bridge_vlan.ports %}
+	list ports '{{ port }}'
+{% endfor %}
+
+{% endfor %}
+# -----------------------------------------------------------------------------
+# --- INTERFACES ---
+# -----------------------------------------------------------------------------
+
+{% for interface in network.interfaces %}
+config interface '{{ interface.name }}'
+	option proto 'static'
+	option device '{{ network.bridge.name }}.{{ interface.vlan }}'
+	list ipaddr '{{ interface.address }}'
+
+{% endfor %}
+# -----------------------------------------------------------------------------
+# --- WAN ---
+# -----------------------------------------------------------------------------
+
+config device
+	option type '8021q'
+	option ifname 'eth1'
+	option vid '{{ secrets.network.vlan_id }}'
+	option name 'eth1.{{ secrets.network.vlan_id }}'
+
+config interface 'wan6'
+	option proto 'dhcpv6'
+	option device 'eth1.{{ secrets.network.vlan_id }}'
+	option reqaddress 'try'
+	option reqprefix 'auto'
+	option norelease '1'
+	option clientid '{{ network.wan6.clientid }}'
+	option peerdns '0'
+	list dns '127.0.0.1'
+	list dns '::1'
+
+config interface 'wan'
+	option proto 'map'
+	option maptype 'map-e'
+	option peeraddr '{{ secrets.network.peeraddr }}'
+	option ipaddr '{{ secrets.network.ipaddr }}'
+	option ip6prefix '{{ secrets.network.ip6prefix }}'
+	option ip6prefixlen '{{ secrets.network.ip6prefixlen }}'
+	option tunlink 'wan6'
+
+# -----------------------------------------------------------------------------
+# --- WIREGUARD ---
+# -----------------------------------------------------------------------------
+
+config interface 'vpn'
+	option proto 'wireguard'
+	option private_key '{{ secrets.network.wireguard.server.private_key }}'
+	option listen_port '{{ network.wireguard.listen_port }}'
+{% for address in network.wireguard.addresses %}
+	list addresses '{{ address }}'
+{% endfor %}
+
+{% for peer in secrets.network.wireguard.peers %}
+config wireguard_vpn
+	option description '{{ peer.description }}'
+	option public_key '{{ peer.public_key }}'
+	option preshared_key '{{ peer.preshared_key }}'
+	list allowed_ips '{{ peer.allowed_ip }}'
+
+{% endfor %}

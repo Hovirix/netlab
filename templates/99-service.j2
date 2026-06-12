@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+# -----------------------------------------------------------------------------
+# --- ENABLE SERVICES ---
+# -----------------------------------------------------------------------------
+
+/etc/init.d/cron enable || true
+/etc/init.d/cron start || true
+
+/etc/init.d/adguardhome enable || true
+/etc/init.d/adguardhome start || true
+
+/etc/init.d/irqbalance enable || true
+/etc/init.d/irqbalance start || true
+
+# -----------------------------------------------------------------------------
+# --- DISABLE SERVICES ---
+# -----------------------------------------------------------------------------
+
+/etc/init.d/odhcpd disable || true
+/etc/init.d/odhcpd stop || true
+
+exit 0

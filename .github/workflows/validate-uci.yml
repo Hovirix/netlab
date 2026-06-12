@@ -1,4 +1,4 @@
-name: Validate UCI config
+name: Validate repository
 
 on:
   push:
@@ -15,5 +15,5 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v19
 
-      - name: Validate rendered UCI config
-        run: nix develop --command task test
+      - name: Run flake checks
+        run: nix flake check

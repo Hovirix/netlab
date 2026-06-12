@@ -1,2 +1,0 @@
-0 */2 * * * /sbin/ifdown wan; /sbin/ifdown wan6; sleep 5; /sbin/ifup wan6; sleep 5; /sbin/ifup wan
-0 0,12 * * * /sbin/reboot

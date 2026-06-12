@@ -1,0 +1,49 @@
+# -----------------------------------------------------------------------------
+# --- WIFI DEVICES ---
+# -----------------------------------------------------------------------------
+
+{% if secrets.wireless is defined %}
+{% set wifi = secrets.wireless.wifi -%}
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option path 'platform/soc/18000000.wifi'
+	option band '2g'
+	option channel 'auto'
+	option htmode 'HE40'
+	option country '{{ wifi.country }}'
+	option cell_density '0'
+
+config wifi-device 'radio1'
+	option type 'mac80211'
+	option path 'platform/soc/18000000.wifi+1'
+	option band '5g'
+	option channel 'auto'
+	option htmode 'HE160'
+	option country '{{ wifi.country }}'
+	option cell_density '0'
+
+# -----------------------------------------------------------------------------
+# --- WIFI INTERFACES ---
+# -----------------------------------------------------------------------------
+
+config wifi-iface 'wifinet0'
+	option device 'radio0'
+	option mode 'ap'
+	option ssid '{{ wifi.name }} 2.4'
+	option encryption 'sae'
+	option isolate '1'
+	option key '{{ wifi.password["2g"] }}'
+	option ocv '0'
+	option network 'vlan50'
+
+config wifi-iface 'wifinet1'
+	option device 'radio1'
+	option mode 'ap'
+	option ssid '{{ wifi.name }} 5'
+	option encryption 'sae'
+	option key '{{ wifi.password["5g"] }}'
+	option ocv '0'
+	option network 'vlan10'
+{% else %}
+# Wireless is disabled because secrets.wireless is not present.
+{% endif %}

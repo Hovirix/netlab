@@ -1,0 +1,76 @@
+{% set defaults = firewall.defaults -%}
+# -----------------------------------------------------------------------------
+# --- DEFAULTS ---
+# -----------------------------------------------------------------------------
+
+config defaults
+	option input '{{ defaults.input }}'
+	option output '{{ defaults.output }}'
+	option forward '{{ defaults.forward }}'
+	option synflood_protect '{{ defaults.synflood_protect }}'
+	option flow_offloading '{{ defaults.flow_offloading }}'
+	option flow_offloading_hw '{{ defaults.flow_offloading_hw }}'
+
+# -----------------------------------------------------------------------------
+# --- ZONES ---
+# -----------------------------------------------------------------------------
+
+{% for zone in firewall.zones %}
+config zone
+	option name '{{ zone.name }}'
+	option input '{{ zone.input }}'
+	option output '{{ zone.output }}'
+	option forward '{{ zone.forward }}'
+{% for network_name in zone.networks %}
+	list network '{{ network_name }}'
+{% endfor %}
+{% if zone.masq is defined %}
+	option masq '{{ zone.masq }}'
+{% endif %}
+{% if zone.mtu_fix is defined %}
+	option mtu_fix '{{ zone.mtu_fix }}'
+{% endif %}
+
+{% endfor %}
+# -----------------------------------------------------------------------------
+# --- FORWARDINGS ---
+# -----------------------------------------------------------------------------
+
+{% for forwarding in firewall.forwardings %}
+config forwarding
+	option src '{{ forwarding.src }}'
+	option dest '{{ forwarding.dest }}'
+
+{% endfor %}
+# -----------------------------------------------------------------------------
+# --- RULES ---
+# -----------------------------------------------------------------------------
+
+{% for rule in firewall.rules %}
+config rule
+	option name '{{ rule.name }}'
+	option src '{{ rule.src }}'
+{% if rule.dest is defined %}
+	option dest '{{ rule.dest }}'
+{% endif %}
+	option proto '{{ rule.proto }}'
+{% if rule.src_port is defined %}
+	option src_port '{{ rule.src_port }}'
+{% endif %}
+{% if rule.dest_port is defined %}
+	option dest_port '{{ rule.dest_port }}'
+{% endif %}
+{% if rule.icmp_types is defined %}
+{% for icmp_type in rule.icmp_types %}
+	list icmp_type '{{ icmp_type }}'
+{% endfor %}
+{% endif %}
+{% if rule.limit is defined %}
+	option limit '{{ rule.limit }}'
+{% endif %}
+{% if rule.family is defined %}
+	option family '{{ rule.family }}'
+{% endif %}
+	option target '{{ rule.target }}'
+
+{% endfor %}

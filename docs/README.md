@@ -13,19 +13,21 @@ reading every firewall rule directly.
 
 ## Source Of Truth
 
-The rendered OpenWrt files live under `build/staged-files/`, then are passed to
+Rendered OpenWrt files will live under `build/staged-files/`, then be passed to
 OpenWrt ImageBuilder. That directory is disposable and should not be committed.
 
-Non-secret policy lives under `config/`. Secrets live under `secrets/`. Runtime
-files are generated from templates under `templates/`.
+Non-secret policy lives under `config/`. Secrets live in `secrets.sops.yaml`.
+Runtime files are generated from Jinja templates under `templates/`.
 
 | Config | Path |
 | --- | --- |
-| Network policy | `config/network.yaml` + `templates/network.tmpl` |
-| DHCP | `config/network.yaml` + `templates/dhcp.tmpl` |
-| Firewall | `config/firewall.yaml` + `templates/firewall.tmpl` |
-| Wireless | `templates/wireless.tmpl` + `secrets/wireless.sops.yaml` |
-| AdGuardHome | `templates/adguardhome.yaml.tmpl` + `secrets/adguardhome.sops.yaml` |
+| Network policy | `config/network.yaml` + `templates/network.j2` |
+| DHCP | `config/network.yaml` + `templates/dhcp.j2` |
+| Firewall | `config/firewall.yaml` + `templates/firewall.j2` |
+| Cron | `config/services.yaml` + `templates/crontab.j2` |
+| SSH authorized keys | `config/services.yaml` + `templates/authorized_keys.j2` |
+| Wireless | `templates/wireless.j2` + `secrets.sops.yaml` |
+| AdGuardHome | `templates/adguardhome.yaml.j2` + `secrets.sops.yaml` |
 
 ## Security Model
 

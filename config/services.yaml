@@ -1,0 +1,10 @@
+crontab:
+  root:
+    - schedule: "0 */2 * * *"
+      command: "/sbin/ifdown wan; /sbin/ifdown wan6; sleep 5; /sbin/ifup wan6; sleep 5; /sbin/ifup wan"
+    - schedule: "0 0,12 * * *"
+      command: "/sbin/reboot"
+
+dropbear:
+  authorized_keys:
+    - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBjCf1PpvoMshFkoyjFOYUJ6/pLexwEFqr29COJawkoB"

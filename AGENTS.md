@@ -11,28 +11,25 @@ The project uses the OpenWrt ImageBuilder to build the final firmware.
 
 - `config/*.yaml` contains non-secret network, DHCP, and firewall policy.
 - `config/openwrt.env` contains OpenWrt target, package, ImageBuilder, and router deploy settings.
-- `secrets/*.sops.yaml` contains SOPS-managed secrets.
-- `templates/` renders OpenWrt runtime files into `build/staged-files/`.
-- `files/` contains static files copied into the staged firmware tree.
-- Nix is only used for `nix develop` tool provisioning.
+- `secrets.sops.yaml` contains SOPS-managed secrets.
+- `templates/*.j2` contains Jinja templates for future rendered OpenWrt runtime files.
+- Runtime behavior should be edited through `config/` and rendered templates, not static files.
+- Nix is only used for `nix develop`, `nix fmt`, and `nix flake check` tool provisioning.
 
-## Build Pipeline
+## Tooling
 
-Everything is managed with Taskfile and plain shell scripts as follows.
+Rendering, data validation, build, and deploy commands are intentionally pending
+while the Python/Jinja workflow is being prepared. Current available commands:
 
-1. `task check-update`: checks whether a new version of OpenWrt is released.
-1. `task test`: renders fixture data and validates UCI configs.
-1. `task render`: renders templates into `build/staged-files/`.
-1. `task build`: builds the firmware image.
-1. `task deploy`: runs `sysupgrade` on the router.
-
-> `task apply` is a wrapper for the build pipeline.
+1. `task fmt`: formats repository files.
+1. `task check`: runs repository checks.
+1. `task clean`: removes generated build artifacts.
 
 ## Reviewing Model
 
 - Check the changes to the config files using Git.
 - Assess any illogical configuration or misconfiguration against the current session, network model, and security model.
-- Suggest `task test` as the manual validation command.
+- Suggest `task check` as the manual validation command until data validation is implemented.
 - Output structured tables for changes in each category, such as VLANs, WAN, or VPN.
 
 ## Network Model

@@ -8,29 +8,32 @@ network policy.
 The repository workflow is:
 
 ```text
-apply (check-update -> test -> render -> build -> deploy)
+pending (data validation -> render -> build -> deploy)
 ```
 
-Use `task test` for repository validation and `task build` for local secret
-rendering plus firmware build.
+Use `task check` for repository validation while the data validation and Python
+render workflow is being prepared.
 
-Use `task deploy` only after reviewing the generated files and
-confirming the management path is safe.
+Build and deploy commands are intentionally unavailable until validation is in
+place.
 
 Generated config and build artifacts are written under `build/`.
 
-Use `task apply` for the full end-to-end flow.
+The future deploy command should only be used after reviewing the generated
+files and confirming the management path is safe.
 
 ## Generated Files
 
 | File | Role |
 | --- | --- |
-| `build/staged-files/etc/config/network` | Interfaces, bridge VLANs, WAN, and WireGuard. |
-| `build/staged-files/etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
-| `build/staged-files/etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
-| `build/staged-files/etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
+| `etc/config/network` | Interfaces, bridge VLANs, WAN, and WireGuard. |
+| `etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
+| `etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
+| `etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
+| `etc/crontabs/root` | Rendered cron jobs from `config/services.yaml`. |
+| `etc/dropbear/authorized_keys` | Rendered SSH authorized keys from `config/services.yaml`. |
 
-Templates live under `templates/`. When a template changes, run `task test` and then `task build` to verify generated config and firmware.
+Templates live under `templates/`. When a template changes, run `task check` until renderer validation is implemented.
 
 ## Deployment Safety
 
@@ -53,23 +56,14 @@ access are both tested.
 
 ## Validation Commands
 
-Run repository checks before building:
+Run repository checks:
 
 ```bash
-task test
+task check
 ```
 
-Run a full local build:
-
-```bash
-task build
-```
-
-Run full apply (warn on updates and continue):
-
-```bash
-task apply
-```
+Build, render, deploy, and apply commands are pending while the data validation
+workflow is being prepared.
 
 After deploying to the router, validate firewall syntax before restarting it:
 
@@ -107,7 +101,7 @@ The ISP-provided DHCPv6 lease for `wan6` lasts about 2.5 hours. If `wan6` is not
 refreshed before the lease expires, the MAP-E uplink can become unroutable even
 though the interface still appears configured.
 
-The image enables `cron` and installs a root crontab that restarts MAP-E `wan`
+The image enables `cron` and renders a root crontab from `config/services.yaml` that restarts MAP-E `wan`
 and DHCPv6 `wan6` every 2 hours. `wan` is brought down first because it depends
 on `wan6`, then `wan6` is brought back up before `wan`:
 
@@ -143,8 +137,8 @@ If DNS fails on a VLAN while DHCP works, check AdGuard Home binding first.
 The AdGuard Home web UI is bound to the admin gateway `10.10.0.1:3000` and
 should only be reachable from `vlan10` and `vpn` by firewall policy.
 
-The AdGuard Home admin user is rendered from `templates/adguardhome.yaml.tmpl`
-using `secrets/adguardhome.sops.yaml`. Store the AdGuardHome bcrypt password
+The AdGuard Home admin user is rendered from `templates/adguardhome.yaml.j2`
+using `secrets.sops.yaml`. Store the AdGuardHome bcrypt password
 hash in `user.password_hash`; do not store a plaintext password in the secret.
 
 ## Wireless Checks
@@ -211,7 +205,7 @@ Recommended controls:
 
 ### WireGuard Secret Rotation
 
-Use the WireGuard rotation task to update `secrets/network.sops.yaml`. The tool
+Use the WireGuard rotation task to update `secrets.sops.yaml`. The tool
 does not print private keys or preshared keys.
 
 Rotate one peer preshared key:
@@ -243,7 +237,7 @@ The client config and QR code contain the peer private key and preshared key.
 Store them securely and do not leave terminal scrollback exposed. The generated
 client config uses full-tunnel routing with `AllowedIPs = 0.0.0.0/0, ::/0`.
 The endpoint is read from `wireguard.server.endpoint` in
-`secrets/network.sops.yaml`, or can be overridden with `--endpoint host:51820`.
+`secrets.sops.yaml`, or can be overridden with `--endpoint host:51820`.
 
 Rotating the router WireGuard server key is disruptive because every client must
 be updated with the new server public key. The command requires explicit
@@ -256,7 +250,7 @@ task rotate-secrets -- --server --confirm-disruptive
 After any WireGuard secret rotation:
 
 1. Update affected client configs before relying on VPN access.
-1. Run `task test`.
+1. Run `task check`.
 1. Build and deploy the firmware.
 1. Verify WireGuard access from each affected peer.
 1. Keep a local `vlan10` management path available until VPN access is confirmed.
