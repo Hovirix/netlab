@@ -1,6 +1,4 @@
 /.direnv
 /openwrt-imagebuilder-*
+/build
 /build-output
-/files/etc/config/network
-/files/etc/config/wireless
-/files/etc/adguardhome/adguardhome.yaml

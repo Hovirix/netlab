@@ -24,14 +24,14 @@ jobs:
         id: check
         shell: bash
         run: |
-          output="$(nix run .#check-update 2>&1)"
+          output="$(nix develop --command task check-update 2>&1)"
 
           printf '%s\n' "$output"
 
           latest="$(printf '%s\n' "$output" | sed -n 's/^LATEST_OPENWRT_VERSION=//p' | tail -n 1)"
           current="$(printf '%s\n' "$output" | sed -n 's/^CURRENT_OPENWRT_VERSION=//p' | tail -n 1)"
           has_update="$(printf '%s\n' "$output" | sed -n 's/^OPENWRT_UPDATE_AVAILABLE=//p' | tail -n 1)"
-          imagebuilder_hash="$(printf '%s\n' "$output" | sed -n 's/^IMAGEBUILDER_HASH=//p' | tail -n 1)"
+          imagebuilder_sha256="$(printf '%s\n' "$output" | sed -n 's/^OPENWRT_IMAGEBUILDER_SHA256=//p' | tail -n 1)"
 
           if [ -z "$has_update" ]; then
             has_update=false
@@ -41,18 +41,18 @@ jobs:
             echo "latest=$latest"
             echo "current=$current"
             echo "has_update=$has_update"
-            echo "imagebuilder_hash=$imagebuilder_hash"
+            echo "imagebuilder_sha256=$imagebuilder_sha256"
           } >> "$GITHUB_OUTPUT"
 
       - name: Stop when already up to date
         if: steps.check.outputs.has_update != 'true'
         run: echo "No OpenWrt update available"
 
-      - name: Bump version and imagebuilder hash in config
+      - name: Bump version and ImageBuilder checksum
         if: steps.check.outputs.has_update == 'true'
         run: |
-          sed -i "s/^ *openwrtVersion = \".*\";/  openwrtVersion = \"${{ steps.check.outputs.latest }}\";/" config.nix
-          sed -i "s|^ *imageBuilderHash = \".*\";|  imageBuilderHash = \"${{ steps.check.outputs.imagebuilder_hash }}\";|" config.nix
+          sed -i "s/^OPENWRT_VERSION=.*/OPENWRT_VERSION=\"${{ steps.check.outputs.latest }}\"/" config/openwrt.env
+          sed -i "s/^OPENWRT_IMAGEBUILDER_SHA256=.*/OPENWRT_IMAGEBUILDER_SHA256=\"${{ steps.check.outputs.imagebuilder_sha256 }}\"/" config/openwrt.env
 
       - name: Create or update PR
         if: steps.check.outputs.has_update == 'true'
@@ -68,7 +68,7 @@ jobs:
 
             - Current: `${{ steps.check.outputs.current }}`
             - Latest: `${{ steps.check.outputs.latest }}`
-            - Updated files: `config.nix`
+            - Updated files: `config/openwrt.env`
 
             Please review and merge.
 

@@ -1,0 +1,75 @@
+bridge:
+  name: br-lan
+  ports:
+    - lan1
+    - lan2
+    - lan3
+    - lan4
+    - lan5
+  vlans:
+    - id: 10
+      ports:
+        - lan1:t
+        - lan2:t
+        - lan5:u*
+    - id: 20
+      ports:
+        - lan1:t
+        - lan2:t
+    - id: 30
+      ports:
+        - lan1:t
+        - lan2:t
+        - lan3:u*
+    - id: 40
+      ports:
+        - lan1:t
+        - lan2:t
+    - id: 50
+      ports:
+        - lan1:t
+        - lan2:t
+    - id: 60
+      ports:
+        - lan1:t
+        - lan2:t
+
+interfaces:
+  - name: vlan10
+    vlan: 10
+    address: 10.10.0.1/24
+    dns: 10.10.0.1
+    dhcp: true
+  - name: vlan20
+    vlan: 20
+    address: 10.20.0.1/24
+    dns: 10.20.0.1
+    dhcp: false
+  - name: vlan30
+    vlan: 30
+    address: 10.30.0.1/24
+    dns: 10.30.0.1
+    dhcp: true
+  - name: vlan40
+    vlan: 40
+    address: 10.40.0.1/24
+    dns: 10.40.0.1
+    dhcp: true
+  - name: vlan50
+    vlan: 50
+    address: 10.50.0.1/24
+    dns: 10.50.0.1
+    dhcp: true
+  - name: vlan60
+    vlan: 60
+    address: 10.60.0.1/24
+    dns: 10.60.0.1
+    dhcp: true
+
+wan6:
+  clientid: 000300019483C4B743C5
+
+wireguard:
+  listen_port: 51820
+  addresses:
+    - 10.255.0.1/24

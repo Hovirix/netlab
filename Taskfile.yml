@@ -1,0 +1,52 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  render:
+    desc: Render firmware files into build/staged-files
+    cmds:
+      - ./scripts/render.sh
+
+  test:
+    desc: Render fixtures and validate UCI config
+    cmds:
+      - ./scripts/test.sh
+
+  build:
+    desc: Build OpenWrt firmware image
+    cmds:
+      - task: test
+      - task: render
+      - ./scripts/build.sh
+
+  deploy:
+    desc: Upload and sysupgrade the router
+    cmds:
+      - ./scripts/deploy.sh
+
+  apply:
+    desc: Check updates, build, and deploy
+    cmds:
+      - cmd: ./scripts/check-update.sh
+        ignore_error: true
+      - task: build
+      - task: deploy
+
+  check-update:
+    desc: Check for newer OpenWrt releases
+    cmds:
+      - ./scripts/check-update.sh
+
+  rotate-secrets:
+    desc: Rotate WireGuard secrets
+    cmds:
+      - python3 ./scripts/rotate-wireguard-secrets.py {{.CLI_ARGS}}
+
+  clean:
+    desc: Remove generated build files
+    cmds:
+      - rm -rf build build-output

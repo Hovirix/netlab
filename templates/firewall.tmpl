@@ -1,0 +1,80 @@
+{{- $firewall := ds "firewall" -}}
+{{- $defaults := index $firewall "defaults" -}}
+# -----------------------------------------------------------------------------
+# --- GENERAL ---
+# -----------------------------------------------------------------------------
+
+config defaults
+	option input '{{ index $defaults "input" }}'
+	option output '{{ index $defaults "output" }}'
+	option forward '{{ index $defaults "forward" }}'
+	option synflood_protect '{{ index $defaults "synflood_protect" }}'
+	option flow_offloading '{{ index $defaults "flow_offloading" }}'
+	option flow_offloading_hw '{{ index $defaults "flow_offloading_hw" }}'
+
+# -----------------------------------------------------------------------------
+# --- ZONES ---
+# -----------------------------------------------------------------------------
+
+{{- range $zone := index $firewall "zones" }}
+
+config zone
+	option name '{{ index $zone "name" }}'
+	option input '{{ index $zone "input" }}'
+	option output '{{ index $zone "output" }}'
+	option forward '{{ index $zone "forward" }}'
+{{- range $network := index $zone "networks" }}
+	list network '{{ $network }}'
+{{- end }}
+{{- with index $zone "masq" }}
+	option masq '{{ . }}'
+{{- end }}
+{{- with index $zone "mtu_fix" }}
+	option mtu_fix '{{ . }}'
+{{- end }}
+
+{{- end }}
+
+# -----------------------------------------------------------------------------
+# --- FORWARDING ---
+# -----------------------------------------------------------------------------
+
+{{- range $forwarding := index $firewall "forwardings" }}
+
+config forwarding
+	option src '{{ index $forwarding "src" }}'
+	option dest '{{ index $forwarding "dest" }}'
+
+{{- end }}
+
+# -----------------------------------------------------------------------------
+# --- RULES ---
+# -----------------------------------------------------------------------------
+
+{{- range $rule := index $firewall "rules" }}
+
+config rule
+	option name '{{ index $rule "name" }}'
+	option src '{{ index $rule "src" }}'
+{{- with index $rule "dest" }}
+	option dest '{{ . }}'
+{{- end }}
+	option proto '{{ index $rule "proto" }}'
+{{- with index $rule "src_port" }}
+	option src_port '{{ . }}'
+{{- end }}
+{{- with index $rule "dest_port" }}
+	option dest_port '{{ . }}'
+{{- end }}
+{{- range $icmpType := index $rule "icmp_types" }}
+	list icmp_type '{{ $icmpType }}'
+{{- end }}
+{{- with index $rule "limit" }}
+	option limit '{{ . }}'
+{{- end }}
+{{- with index $rule "family" }}
+	option family '{{ . }}'
+{{- end }}
+	option target '{{ index $rule "target" }}'
+
+{{- end }}
