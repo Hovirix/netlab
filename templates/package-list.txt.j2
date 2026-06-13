@@ -1,0 +1,3 @@
+{% for package in openwrt.packages -%}
+{{ package }}{% if not loop.last %} {% endif %}
+{%- endfor %}
