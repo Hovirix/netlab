@@ -16,7 +16,7 @@ This repository provides a single source of truth for network configuration, ena
 - **Template rendering** – Jinja templates are prepared for the upcoming Python renderer
 - **Safe deployment** – Sysupgrade deployment will stay explicit when the build workflow returns
 - **Taskfile workflow** – Taskfile currently exposes formatting, checks, and cleanup
-- **Integrated dev tooling** – `nix develop`, `nix fmt`, and `nix flake check` provide tools and formatting only
+- **Integrated dev tooling** – `nix develop` provides tools, `nix fmt` formats files, and Taskfile runs checks
 - **Python dependency locking** – `uv.lock` and uv2nix provide the future Python/Jinja workflow dependencies
 
 ## Workflow
@@ -28,6 +28,7 @@ Available commands:
 
 ```bash
 task fmt
+task lint
 task check
 task clean
 ```
@@ -138,7 +139,7 @@ treefmt.nix
 
 ## CI/CD
 
-- `validate-uci.yml` – Runs `nix flake check`
+- `validate-uci.yml` – Runs `nix develop --command task check`
 
 ## Local pre-commit setup
 

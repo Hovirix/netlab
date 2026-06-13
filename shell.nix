@@ -33,6 +33,7 @@ pkgs.mkShell {
     bash
     coreutils
     curl
+    deadnix
     gawk
     gitMinimal
     gnumake
@@ -45,7 +46,9 @@ pkgs.mkShell {
     shellcheck
     shfmt
     sops
+    statix
     treefmtWrapper
+    typos
     uci
     unzip
     wget

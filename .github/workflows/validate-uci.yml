@@ -15,5 +15,5 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v19
 
-      - name: Run flake checks
-        run: nix flake check
+      - name: Run repository checks
+        run: nix develop --command task check

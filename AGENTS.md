@@ -15,7 +15,7 @@ The project uses the OpenWrt ImageBuilder to build the final firmware.
 - `templates/imagebuilder.config.j2` and `templates/package-list.txt.j2` contain future ImageBuilder metadata templates.
 - `pyproject.toml` and `uv.lock` define Python dependencies consumed by uv2nix.
 - Runtime behavior should be edited through `config/` and rendered templates, not static files.
-- Nix is only used for `nix develop`, `nix fmt`, and `nix flake check` tool provisioning.
+- Nix is only used for `nix develop` tool provisioning and `nix fmt` formatting.
 - `nix develop` uses uv2nix; do not use `uv run` inside the development shell.
 
 ## Tooling
@@ -24,6 +24,7 @@ Rendering, data validation, build, and deploy commands are intentionally pending
 while the Python/Jinja workflow is being prepared. Current available commands:
 
 1. `task fmt`: formats repository files.
+1. `task lint`: runs repository linters.
 1. `task check`: runs repository checks.
 1. `task clean`: removes generated build artifacts.
 

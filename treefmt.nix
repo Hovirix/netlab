@@ -2,19 +2,10 @@
   projectRootFile = "flake.nix";
 
   programs = {
-    deadnix.enable = true;
     mdformat.enable = true;
     nixfmt.enable = true;
     shfmt.enable = true;
-    statix.enable = true;
     taplo.enable = true;
-    typos = {
-      enable = true;
-      excludes = [
-        "secrets.sops.yaml"
-        "secrets/*.sops.yaml"
-      ];
-    };
     yamlfmt = {
       enable = true;
       excludes = [

@@ -62,6 +62,12 @@ Run repository checks:
 task check
 ```
 
+Run repository linters directly with:
+
+```bash
+task lint
+```
+
 Build, render, deploy, and apply commands are pending while the data validation
 workflow is being prepared.
 

@@ -11,10 +11,18 @@ tasks:
     cmds:
       - nix fmt
 
+  lint:
+    desc: Run repository linters
+    cmds:
+      - actionlint
+      - deadnix --fail .
+      - statix check .
+      - typos --exclude secrets.sops.yaml --exclude 'secrets/*.sops.yaml'
+
   check:
     desc: Run repository checks
     cmds:
-      - nix flake check
+      - task lint
 
   clean:
     desc: Remove generated build files
