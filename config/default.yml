@@ -1,0 +1,557 @@
+# --- OPENWRT IMAGE ---
+
+openwrt:
+  version: 25.12.2
+  target: mediatek
+  subtarget: filogic
+  profile: glinet_gl-mt6000
+  host_suffix: Linux-x86_64
+
+  packages:
+    - adguardhome
+    - etherwake
+    - irqbalance
+    - map
+    - wireguard-tools
+
+  imagebuilder_sha256: fe7f03b748ef69ce0be1182f27e3e72e3dd5246328bd0941e4274a837a56142c
+
+# --- ROUTER DEPLOYMENT ---
+
+router:
+  host: 10.10.0.1
+  user: root
+  port: 22
+
+# --- NETWORK ---
+
+network:
+  # Bridge device and switch VLAN membership.
+  bridge:
+    name: br-lan
+
+    ports:
+      - lan1
+      - lan2
+      - lan3
+      - lan4
+      - lan5
+
+    vlans:
+      - id: 10
+        ports:
+          - lan1:t
+          - lan2:t
+          - lan5:u*
+
+      - id: 20
+        ports:
+          - lan1:t
+          - lan2:t
+
+      - id: 30
+        ports:
+          - lan1:t
+          - lan2:t
+          - lan3:u*
+
+      - id: 40
+        ports:
+          - lan1:t
+          - lan2:t
+
+      - id: 50
+        ports:
+          - lan1:t
+          - lan2:t
+
+      - id: 60
+        ports:
+          - lan1:t
+          - lan2:t
+
+  # Layer-3 interfaces exposed by the router.
+  interfaces:
+    - name: vlan10
+      vlan: 10
+      address: 10.10.0.1/24
+      dns: 10.10.0.1
+      dhcp: true
+
+    - name: vlan20
+      vlan: 20
+      address: 10.20.0.1/24
+      dns: 10.20.0.1
+      dhcp: false
+
+    - name: vlan30
+      vlan: 30
+      address: 10.30.0.1/24
+      dns: 10.30.0.1
+      dhcp: true
+
+    - name: vlan40
+      vlan: 40
+      address: 10.40.0.1/24
+      dns: 10.40.0.1
+      dhcp: true
+
+    - name: vlan50
+      vlan: 50
+      address: 10.50.0.1/24
+      dns: 10.50.0.1
+      dhcp: true
+
+    - name: vlan60
+      vlan: 60
+      address: 10.60.0.1/24
+      dns: 10.60.0.1
+      dhcp: true
+
+  # DHCPv6 uplink settings for MAP-E.
+  wan6:
+    clientid: 000300019483C4B743C5
+
+  # WireGuard interface settings. Peer keys live in SOPS secrets.
+  wireguard:
+    listen_port: 51820
+
+    addresses:
+      - 10.255.0.1/24
+
+# --- FIREWALL ---
+
+firewall:
+  # Global firewall defaults.
+  defaults:
+    input: REJECT
+    output: ACCEPT
+    forward: REJECT
+
+    synflood_protect: 1
+    flow_offloading: 1
+    flow_offloading_hw: 1
+
+  # Zone definitions. Every internal VLAN remains its own trust boundary.
+  zones:
+    - name: wan
+      input: DROP
+      output: ACCEPT
+      forward: DROP
+      networks:
+        - wan6
+        - wan
+      masq: 1
+      mtu_fix: 1
+
+    - name: vlan10
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vlan10
+
+    - name: vlan20
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vlan20
+
+    - name: vlan30
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vlan30
+
+    - name: vlan40
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vlan40
+
+    - name: vlan50
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vlan50
+
+    - name: vlan60
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vlan60
+
+    - name: vpn
+      input: DROP
+      output: ACCEPT
+      forward: REJECT
+      networks:
+        - vpn
+
+  # Explicit zone-to-zone forwarding. Omitted zones have no default forwarding.
+  forwardings:
+    - src: vlan10
+      dest: wan
+
+    - src: vlan20
+      dest: wan
+
+    - src: vlan30
+      dest: wan
+
+    - src: vlan40
+      dest: wan
+
+    - src: vlan50
+      dest: wan
+
+    - src: vpn
+      dest: wan
+
+  # Explicit allow rules. Default stance remains deny/reject.
+  rules:
+    # WAN -> Router
+
+    - name: Allow-WAN-to-Router-WireGuard
+      src: wan
+      proto: udp
+      dest_port: 51820
+      target: ACCEPT
+
+    - name: Allow-WAN-to-Router-DHCPv6
+      src: wan
+      proto: udp
+      src_port: 547
+      dest_port: 546
+      family: ipv6
+      target: ACCEPT
+
+    - name: Allow-WAN-to-Router-ICMPv6
+      src: wan
+      proto: icmp
+      icmp_types:
+        - echo-request
+        - echo-reply
+        - destination-unreachable
+        - packet-too-big
+        - time-exceeded
+        - bad-header
+        - unknown-header-type
+        - router-solicitation
+        - neighbour-solicitation
+        - router-advertisement
+        - neighbour-advertisement
+      limit: 1000/sec
+      family: ipv6
+      target: ACCEPT
+
+    - name: Allow-WAN-to-Any-ICMPv6
+      src: wan
+      dest: "*"
+      proto: icmp
+      icmp_types:
+        - echo-request
+        - echo-reply
+        - destination-unreachable
+        - packet-too-big
+        - time-exceeded
+        - bad-header
+        - unknown-header-type
+      limit: 1000/sec
+      family: ipv6
+      target: ACCEPT
+
+    # VLAN10 -> Router
+
+    - name: Allow-VLAN10-to-Router-HTTPS
+      src: vlan10
+      proto: tcp
+      dest_port: 443
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-Router-AdGuard-UI
+      src: vlan10
+      proto: tcp
+      dest_port: 3000
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-Router-SSH
+      src: vlan10
+      proto: tcp
+      dest_port: 22
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-Router-DNS-TCP
+      src: vlan10
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-Router-DNS-UDP
+      src: vlan10
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-Router-DHCP
+      src: vlan10
+      proto: udp
+      src_port: 68
+      dest_port: 67
+      target: ACCEPT
+
+    # VLAN20 -> Router
+
+    - name: Allow-VLAN20-to-Router-DNS-TCP
+      src: vlan20
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN20-to-Router-DNS-UDP
+      src: vlan20
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    # VLAN30 -> Router
+
+    - name: Allow-VLAN30-to-Router-DNS-TCP
+      src: vlan30
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN30-to-Router-DNS-UDP
+      src: vlan30
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN30-to-Router-DHCP
+      src: vlan30
+      proto: udp
+      src_port: 68
+      dest_port: 67
+      target: ACCEPT
+
+    # VLAN40 -> Router
+
+    - name: Allow-VLAN40-to-Router-DNS-TCP
+      src: vlan40
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN40-to-Router-DNS-UDP
+      src: vlan40
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN40-to-Router-DHCP
+      src: vlan40
+      proto: udp
+      src_port: 68
+      dest_port: 67
+      target: ACCEPT
+
+    # VLAN50 -> Router
+
+    - name: Allow-VLAN50-to-Router-DNS-TCP
+      src: vlan50
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN50-to-Router-DNS-UDP
+      src: vlan50
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN50-to-Router-DHCP
+      src: vlan50
+      proto: udp
+      src_port: 68
+      dest_port: 67
+      target: ACCEPT
+
+    # VLAN60 -> Router
+
+    - name: Allow-VLAN60-to-Router-DNS-TCP
+      src: vlan60
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN60-to-Router-DNS-UDP
+      src: vlan60
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VLAN60-to-Router-DHCP
+      src: vlan60
+      proto: udp
+      src_port: 68
+      dest_port: 67
+      target: ACCEPT
+
+    # VPN -> Router
+
+    - name: Allow-VPN-to-Router-HTTPS
+      src: vpn
+      proto: tcp
+      dest_port: 443
+      target: ACCEPT
+
+    - name: Allow-VPN-to-Router-SSH
+      src: vpn
+      proto: tcp
+      dest_port: 22
+      target: ACCEPT
+
+    - name: Allow-VPN-to-Router-AdGuard-UI
+      src: vpn
+      proto: tcp
+      dest_port: 3000
+      target: ACCEPT
+
+    - name: Allow-VPN-to-Router-DNS-TCP
+      src: vpn
+      proto: tcp
+      dest_port: 53
+      target: ACCEPT
+
+    - name: Allow-VPN-to-Router-DNS-UDP
+      src: vpn
+      proto: udp
+      dest_port: 53
+      target: ACCEPT
+
+    # Management -> Internal Services
+
+    - name: Allow-VLAN10-to-VLAN20-Proxmox-HTTPS
+      src: vlan10
+      dest: vlan20
+      proto: tcp
+      dest_port: 8006
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-VLAN20-SSH
+      src: vlan10
+      dest: vlan20
+      proto: tcp
+      dest_port: 22
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-VLAN30-TrueNAS-HTTPS
+      src: vlan10
+      dest: vlan30
+      proto: tcp
+      dest_port: 443
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-VLAN30-TrueNAS-SSH
+      src: vlan10
+      dest: vlan30
+      proto: tcp
+      dest_port: 22
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-VLAN40-TalosAPI
+      src: vlan10
+      dest: vlan40
+      proto: tcp
+      dest_port: 50000
+      target: ACCEPT
+
+    - name: Allow-VLAN10-to-VLAN40-KubeAPI
+      src: vlan10
+      dest: vlan40
+      proto: tcp
+      dest_port: 6443
+      target: ACCEPT
+
+    # VPN -> Internal Services
+
+    - name: Allow-VPN-to-VLAN20-Proxmox-HTTPS
+      src: vpn
+      dest: vlan20
+      proto: tcp
+      dest_port: 8006
+      target: ACCEPT
+
+    - name: Allow-VPN-to-VLAN20-SSH
+      src: vpn
+      dest: vlan20
+      proto: tcp
+      dest_port: 22
+      target: ACCEPT
+
+    - name: Allow-VPN-to-VLAN30-TrueNAS-HTTPS
+      src: vpn
+      dest: vlan30
+      proto: tcp
+      dest_port: 443
+      target: ACCEPT
+
+    - name: Allow-VPN-to-VLAN30-TrueNAS-SSH
+      src: vpn
+      dest: vlan30
+      proto: tcp
+      dest_port: 22
+      target: ACCEPT
+
+    - name: Allow-VPN-to-VLAN40-TalosAPI
+      src: vpn
+      dest: vlan40
+      proto: tcp
+      dest_port: 50000
+      target: ACCEPT
+
+    - name: Allow-VPN-to-VLAN40-KubeAPI
+      src: vpn
+      dest: vlan40
+      proto: tcp
+      dest_port: 6443
+      target: ACCEPT
+
+    # Storage
+
+    - name: Allow-VLAN20-to-VLAN30-NFSv4
+      src: vlan20
+      dest: vlan30
+      proto: tcp
+      dest_port: 2049
+      target: ACCEPT
+
+    - name: Allow-VLAN40-to-VLAN30-NFSv4
+      src: vlan40
+      dest: vlan30
+      proto: tcp
+      dest_port: 2049
+      target: ACCEPT
+
+# --- SERVICES ---
+
+services:
+  # Router SSH service material.
+  dropbear:
+    authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBjCf1PpvoMshFkoyjFOYUJ6/pLexwEFqr29COJawkoB"
+
+  # Router-local scheduled maintenance.
+  crontab:
+    root:
+      - schedule: "0 */2 * * *"
+        command: "/sbin/ifdown wan; /sbin/ifdown wan6; sleep 5; /sbin/ifup wan6; sleep 5; /sbin/ifup wan"
+
+      - schedule: "0 0,12 * * *"
+        command: "/sbin/reboot"
