@@ -9,12 +9,14 @@ Your job is to maintain the network configuration following a zero-trust model.
 
 The project uses the OpenWrt ImageBuilder to build the final firmware.
 
-- `config/*.yaml` contains non-secret network, DHCP, and firewall policy.
-- `config/openwrt.env` contains OpenWrt target, package, ImageBuilder, and router deploy settings.
-- `secrets.sops.yaml` contains SOPS-managed secrets.
-- `templates/*.j2` contains Jinja templates for future rendered OpenWrt runtime files.
+- `config/default.yml` contains all non-secret OpenWrt, router, network, DHCP, firewall, and service policy.
+- `secrets/secrets.sops.yaml` contains SOPS-managed secrets.
+- `templates/files/*.j2` contains Jinja templates for future rendered OpenWrt runtime files.
+- `templates/imagebuilder.config.j2` and `templates/package-list.txt.j2` contain future ImageBuilder metadata templates.
+- `pyproject.toml` and `uv.lock` define Python dependencies consumed by uv2nix.
 - Runtime behavior should be edited through `config/` and rendered templates, not static files.
 - Nix is only used for `nix develop`, `nix fmt`, and `nix flake check` tool provisioning.
+- `nix develop` uses uv2nix; do not use `uv run` inside the development shell.
 
 ## Tooling
 

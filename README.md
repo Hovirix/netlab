@@ -17,7 +17,7 @@ This repository provides a single source of truth for network configuration, ena
 - **Safe deployment** – Sysupgrade deployment will stay explicit when the build workflow returns
 - **Taskfile workflow** – Taskfile currently exposes formatting, checks, and cleanup
 - **Integrated dev tooling** – `nix develop`, `nix fmt`, and `nix flake check` provide tools and formatting only
-- **Automated updates** – Weekly check for new OpenWrt releases with PR + issue
+- **Python dependency locking** – `uv.lock` and uv2nix provide the future Python/Jinja workflow dependencies
 
 ## Workflow
 
@@ -40,7 +40,7 @@ task clean
 ### Prerequisites
 
 > [!NOTE]
-> Future render/build commands will require readable `secrets.sops.yaml`.
+> Future render/build commands will require readable `secrets/secrets.sops.yaml`.
 > `.sops.yaml` configures encryption for SOPS-managed YAML files.
 > Default secret and output paths resolve from the Git worktree root, not the
 > current shell directory.
@@ -48,7 +48,7 @@ task clean
 ### Steps
 
 1. Prepare configuration.
-   Non-secret policy lives in `config/*.yaml` and secrets live in `secrets.sops.yaml`.
+   Non-secret policy lives in `config/default.yml` and secrets live in `secrets/secrets.sops.yaml`.
 
 1. Enter the development shell, or ensure all [dependencies](https://openwrt.org/docs/guide-user/additional-software/imagebuilder?s%5B%5D=openwrt#prerequisites) are installed:
 
@@ -56,13 +56,17 @@ task clean
 nix develop
 ```
 
+The development shell uses uv2nix to build an editable Python environment from
+`pyproject.toml` and `uv.lock`. Do not use `uv run` inside the shell; Python
+dependencies are provided by Nix.
+
 3. Optional runtime overrides
 
 ```bash
 ROUTER_HOST=10.10.0.1
 ROUTER_USER=root
 ROUTER_PORT=22
-SECRETS_FILE=/path/to/secrets.sops.yaml
+SECRETS_FILE=/path/to/secrets/secrets.sops.yaml
 NETLAB_ROOT=/path/to/netlab
 BUILD_OUTPUT_DIR=/path/to/output
 ```
@@ -82,7 +86,7 @@ task fmt
 Encrypt or update a secret file with:
 
 ```bash
-sops --encrypt --in-place secrets.sops.yaml
+sops --encrypt --in-place secrets/secrets.sops.yaml
 ```
 
 5. Build and deploy commands are pending until data validation and the Python renderer are implemented.
@@ -93,22 +97,37 @@ sops --encrypt --in-place secrets.sops.yaml
 
 ```text
 flake.nix
-  └─ devShells     → optional local tool environment only
+  └─ devShells     → local uv2nix-backed tool environment
+
+pyproject.toml / uv.lock
+  └─ Python project metadata and dependency lock
 
 Taskfile.yml
   └─ workflow      → fmt, check, clean
 
-config/*.yaml
-  └─ non-secret network, DHCP, firewall, service, cron, and SSH key policy
+config/default.yml
+  └─ all non-secret OpenWrt, router, network, firewall, and service config
 
-config/openwrt.env
-  └─ OpenWrt target, package, ImageBuilder, and router deploy settings
-
-secrets.sops.yaml
+secrets/secrets.sops.yaml
   └─ decrypted at runtime only
 
-templates/*.j2
+secrets/.sops.yaml
+  └─ SOPS encryption policy
+
+templates/imagebuilder.config.j2
+  └─ Jinja ImageBuilder metadata template
+
+templates/package-list.txt.j2
+  └─ Jinja OpenWrt package list template
+
+templates/files/*.j2
   └─ Jinja runtime file templates for the upcoming renderer
+
+shell.nix
+  └─ uv2nix development shell packages
+
+treefmt.nix
+  └─ formatter configuration
 
 .pre-commit-config.yaml
   └─ cleanup, treefmt, and lint hooks
@@ -120,7 +139,6 @@ templates/*.j2
 ## CI/CD
 
 - `validate-uci.yml` – Runs `nix flake check`
-- `openwrt-update.yml` – Weekly OpenWrt release check with automated PR + issue
 
 ## Local pre-commit setup
 

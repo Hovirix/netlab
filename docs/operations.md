@@ -30,10 +30,10 @@ files and confirming the management path is safe.
 | `etc/config/dhcp` | DHCP service and DHCP-provided DNS options. |
 | `etc/config/firewall` | Zone policies, forwarding, and explicit allow rules. |
 | `etc/config/wireless` | Rendered Wi-Fi radios and SSID network mapping when present. |
-| `etc/crontabs/root` | Rendered cron jobs from `config/services.yaml`. |
-| `etc/dropbear/authorized_keys` | Rendered SSH authorized keys from `config/services.yaml`. |
+| `etc/crontabs/root` | Rendered cron jobs from `config/default.yml`. |
+| `etc/dropbear/authorized_keys` | Rendered SSH authorized keys from `config/default.yml`. |
 
-Templates live under `templates/`. When a template changes, run `task check` until renderer validation is implemented.
+Templates live under `templates/files/`. When a template changes, run `task check` until renderer validation is implemented.
 
 ## Deployment Safety
 
@@ -101,7 +101,7 @@ The ISP-provided DHCPv6 lease for `wan6` lasts about 2.5 hours. If `wan6` is not
 refreshed before the lease expires, the MAP-E uplink can become unroutable even
 though the interface still appears configured.
 
-The image enables `cron` and renders a root crontab from `config/services.yaml` that restarts MAP-E `wan`
+The image enables `cron` and renders a root crontab from `config/default.yml` that restarts MAP-E `wan`
 and DHCPv6 `wan6` every 2 hours. `wan` is brought down first because it depends
 on `wan6`, then `wan6` is brought back up before `wan`:
 
@@ -137,8 +137,8 @@ If DNS fails on a VLAN while DHCP works, check AdGuard Home binding first.
 The AdGuard Home web UI is bound to the admin gateway `10.10.0.1:3000` and
 should only be reachable from `vlan10` and `vpn` by firewall policy.
 
-The AdGuard Home admin user is rendered from `templates/adguardhome.yaml.j2`
-using `secrets.sops.yaml`. Store the AdGuardHome bcrypt password
+The AdGuard Home admin user is rendered from `templates/files/adguardhome.yaml.j2`
+using `secrets/secrets.sops.yaml`. Store the AdGuardHome bcrypt password
 hash in `user.password_hash`; do not store a plaintext password in the secret.
 
 ## Wireless Checks
@@ -172,10 +172,10 @@ trigger is added later.
 
 When adding a new VLAN:
 
-1. Add the bridge VLAN to `config/network.yaml`.
+1. Add the bridge VLAN to `config/default.yml`.
 1. Add the interface with a stable gateway address.
 1. Add DHCP only if the VLAN should hand out addresses.
-1. Add a firewall zone with `input DROP`, `output ACCEPT`, and `forward REJECT` in `config/firewall.yaml`.
+1. Add a firewall zone with `input DROP`, `output ACCEPT`, and `forward REJECT` in `config/default.yml`.
 1. Add WAN forwarding only if the VLAN should have Internet access.
 1. Add router input rules only for required local services.
 1. Add cross-zone rules only for required source, destination, protocol, and port.
@@ -205,54 +205,16 @@ Recommended controls:
 
 ### WireGuard Secret Rotation
 
-Use the WireGuard rotation task to update `secrets.sops.yaml`. The tool
-does not print private keys or preshared keys.
-
-Rotate one peer preshared key:
-
-```bash
-task rotate-secrets -- --peer laptop
-```
-
-Rotate every peer preshared key:
-
-```bash
-task rotate-secrets -- --all-peer-psks
-```
-
-Replace a peer keypair and emit a full-tunnel client config:
-
-```bash
-task rotate-secrets -- --replace-peer laptop --showconfig
-```
-
-Replace a peer keypair and show the full-tunnel client config as a terminal QR
-code:
-
-```bash
-task rotate-secrets -- --replace-peer laptop --qr
-```
-
-The client config and QR code contain the peer private key and preshared key.
-Store them securely and do not leave terminal scrollback exposed. The generated
-client config uses full-tunnel routing with `AllowedIPs = 0.0.0.0/0, ::/0`.
-The endpoint is read from `wireguard.server.endpoint` in
-`secrets.sops.yaml`, or can be overridden with `--endpoint host:51820`.
-
-Rotating the router WireGuard server key is disruptive because every client must
-be updated with the new server public key. The command requires explicit
-confirmation:
-
-```bash
-task rotate-secrets -- --server --confirm-disruptive
-```
+WireGuard secret rotation automation is pending with the Python workflow. Until
+that command exists, update `secrets/secrets.sops.yaml` manually with `sops` and
+do not print private keys or preshared keys in terminal output.
 
 After any WireGuard secret rotation:
 
 1. Update affected client configs before relying on VPN access.
 1. Run `task check`.
-1. Build and deploy the firmware.
-1. Verify WireGuard access from each affected peer.
+1. Wait for the render/build/deploy workflow before producing firmware from the updated secret.
+1. Verify WireGuard access from each affected peer after deployment.
 1. Keep a local `vlan10` management path available until VPN access is confirmed.
 
 ## Future Tightening

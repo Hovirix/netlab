@@ -16,18 +16,20 @@ reading every firewall rule directly.
 Rendered OpenWrt files will live under `build/staged-files/`, then be passed to
 OpenWrt ImageBuilder. That directory is disposable and should not be committed.
 
-Non-secret policy lives under `config/`. Secrets live in `secrets.sops.yaml`.
-Runtime files are generated from Jinja templates under `templates/`.
+Non-secret policy lives in `config/default.yml`. Secrets live in `secrets/secrets.sops.yaml`.
+Runtime files are generated from Jinja templates under `templates/files/`.
+Python workflow dependencies are locked in `uv.lock` and exposed through the
+uv2nix-backed `nix develop` shell.
 
 | Config | Path |
 | --- | --- |
-| Network policy | `config/network.yaml` + `templates/network.j2` |
-| DHCP | `config/network.yaml` + `templates/dhcp.j2` |
-| Firewall | `config/firewall.yaml` + `templates/firewall.j2` |
-| Cron | `config/services.yaml` + `templates/crontab.j2` |
-| SSH authorized keys | `config/services.yaml` + `templates/authorized_keys.j2` |
-| Wireless | `templates/wireless.j2` + `secrets.sops.yaml` |
-| AdGuardHome | `templates/adguardhome.yaml.j2` + `secrets.sops.yaml` |
+| Network policy | `config/default.yml` + `templates/files/network.j2` |
+| DHCP | `config/default.yml` + `templates/files/dhcp.j2` |
+| Firewall | `config/default.yml` + `templates/files/firewall.j2` |
+| Cron | `config/default.yml` + `templates/files/crontab.j2` |
+| SSH authorized keys | `config/default.yml` + `templates/files/authorized_keys.j2` |
+| Wireless | `templates/files/wireless.j2` + `secrets/secrets.sops.yaml` |
+| AdGuardHome | `templates/files/adguardhome.yaml.j2` + `secrets/secrets.sops.yaml` |
 
 ## Security Model
 
