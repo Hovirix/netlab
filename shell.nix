@@ -2,19 +2,26 @@
   build-system-pkgs,
   pkgs,
   pyproject-nix,
-  treefmtWrapper,
   uv2nix,
 }:
 
 let
   inherit (pkgs) lib;
 
-  workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
+  workspace = uv2nix.lib.workspace.loadWorkspace {
+    workspaceRoot = ./.;
+  };
 
   python = pkgs.python312;
-  pythonBase = pkgs.callPackage pyproject-nix.build.packages { inherit python; };
 
-  overlay = workspace.mkPyprojectOverlay { sourcePreference = "wheel"; };
+  pythonBase = pkgs.callPackage pyproject-nix.build.packages {
+    inherit python;
+  };
+
+  overlay = workspace.mkPyprojectOverlay {
+    sourcePreference = "wheel";
+  };
+
   pythonSet = pythonBase.overrideScope (
     lib.composeManyExtensions [
       build-system-pkgs.overlays.wheel
@@ -22,13 +29,20 @@ let
     ]
   );
 
-  editableOverlay = workspace.mkEditablePyprojectOverlay { root = "$REPO_ROOT"; };
+  editableOverlay = workspace.mkEditablePyprojectOverlay {
+    root = "$REPO_ROOT";
+  };
+
   editablePythonSet = pythonSet.overrideScope editableOverlay;
+
   virtualenv = editablePythonSet.mkVirtualEnv "netlab-dev-env" workspace.deps.all;
 in
 
 pkgs.mkShell {
-  packages = with pkgs; [
+  packages = [
+    virtualenv
+  ]
+  ++ (with pkgs; [
     actionlint
     bash
     coreutils
@@ -47,17 +61,15 @@ pkgs.mkShell {
     shfmt
     sops
     statix
-    treefmtWrapper
     typos
     uci
     unzip
+    uv
     wget
     wireguard-tools
     yamlfmt
     zstd
-    uv
-    virtualenv
-  ];
+  ]);
 
   env = {
     UV_NO_SYNC = "1";
@@ -67,6 +79,6 @@ pkgs.mkShell {
 
   shellHook = ''
     unset PYTHONPATH
-    export REPO_ROOT=$(git rev-parse --show-toplevel)
+    export REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
   '';
 }

@@ -10,7 +10,7 @@ dependencies = [
   "pydantic",
   "pydantic-settings",
   "rich",
-  "ruamel-yaml",
+  "ruamel.yaml",
   "typer",
 ]
 
