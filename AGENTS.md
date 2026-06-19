@@ -9,26 +9,30 @@ Your job is to maintain the network configuration following a zero-trust model.
 
 The project uses the OpenWrt ImageBuilder to build the final firmware.
 
-- All files under `files/etc` are baked into the final image and are the main configuration.
-- Templates under `templates/` render files that contain sensitive secrets from `secrets/`.
-- `apps/` contains Nix apps for the build pipeline.
+- `config/router.yaml` is the non-secret source model.
+- `config/secrets.sops.yaml` contains encrypted runtime secrets.
+- `config/secrets.placeholder.yaml` contains non-secret validation placeholders.
+- Templates under `templates/` map directly to rendered OpenWrt files.
+- Generated OpenWrt files are written under ignored `build/files/`.
+- There is no tracked static firmware overlay.
 
 ## Build Pipeline
 
-Everything is managed with Nix and is built as follows.
+Nix is only used for the developer shell and formatter. The build pipeline is
+run with Just and thin shell scripts.
 
-1. `check-update.nix`: checks whether a new version of OpenWrt is released.
-1. `test.nix`: tests templates and validates UCI configs.
-1. `build.nix`: renders templates into a temporary staged image files tree and builds the image.
-1. `deploy.nix`: runs `sysupgrade` on the router.
+1. `just validate`: renders placeholder secrets and validates generated UCI config.
+1. `just render`: decrypts SOPS secrets and renders `build/files/`.
+1. `just build`: renders real config and builds firmware with ImageBuilder.
+1. `just clean`: removes generated `build/` state.
 
-> `apply.nix` is a wrapper for the build pipeline.
+Use `nix develop` to enter the tool shell before running Just commands.
 
 ## Reviewing Model
 
 - Check the changes to the config files using Git.
 - Assess any illogical configuration or misconfiguration against the current session, network model, and security model.
-- Suggest `nix flake check` as the manual validation command.
+- Suggest `just validate` and `nix flake check` as manual validation commands.
 - Output structured tables for changes in each category, such as VLANs, WAN, or VPN.
 
 ## Network Model
@@ -104,7 +108,7 @@ fix(firewall): restrict WireGuard access to admin VLAN
 ```
 
 ```text
-test(uci): add fixture coverage for VLAN templates
+test(uci): add fixture coverage for Gomplate rendering
 ```
 
 Common types:

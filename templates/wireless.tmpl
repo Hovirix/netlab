@@ -1,44 +1,28 @@
-{{- $wireless := ds "wireless" -}}
-{{- $wifi := index $wireless "wifi" -}}
-{{- $country := index $wifi "country" -}}
-{{- $name := index $wifi "name" -}}
-{{- $passwords := index $wifi "password" -}}
-{{- $password2g := index $passwords "2g" -}}
-{{- $password5g := index $passwords "5g" -}}
-
-config wifi-device 'radio0'
+{{- $config := ds "config" -}}
+{{- $secrets := ds "secrets" -}}
+{{- $wifi := $secrets.wireless.wifi -}}
+{{- range $radio := $config.wireless.radios }}
+config wifi-device '{{ $radio.name }}'
 	option type 'mac80211'
-	option path 'platform/soc/18000000.wifi'
-	option band '2g'
+	option path '{{ $radio.path }}'
+	option band '{{ $radio.band }}'
 	option channel 'auto'
-	option htmode 'HE40'
-	option country '{{ $country }}'
+	option htmode '{{ $radio.htmode }}'
+	option country '{{ index $wifi "country" }}'
 	option cell_density '0'
 
-config wifi-device 'radio1'
-	option type 'mac80211'
-	option path 'platform/soc/18000000.wifi+1'
-	option band '5g'
-	option channel 'auto'
-	option htmode 'HE160'
-	option country '{{ $country }}'
-	option cell_density '0'
-
-config wifi-iface 'wifinet0'
-	option device 'radio0'
+{{- end }}
+{{- range $iface := $config.wireless.interfaces }}
+config wifi-iface '{{ $iface.name }}'
+	option device '{{ $iface.device }}'
 	option mode 'ap'
-	option ssid '{{ $name }} 2.4'
+	option ssid '{{ index $wifi "name" }} {{ $iface.suffix }}'
 	option encryption 'sae'
+{{- if $iface.isolate }}
 	option isolate '1'
-	option key '{{ $password2g }}'
+{{- end }}
+	option key '{{ index (index $wifi "password") $iface.secret_key }}'
 	option ocv '0'
-	option network 'vlan50'
+	option network 'vlan{{ (index $config.vlans $iface.network).id }}'
 
-config wifi-iface 'wifinet1'
-	option device 'radio1'
-	option mode 'ap'
-	option ssid '{{ $name }} 5'
-	option encryption 'sae'
-	option key '{{ $password5g }}'
-	option ocv '0'
-	option network 'vlan10'
+{{- end }}

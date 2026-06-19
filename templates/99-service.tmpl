@@ -1,0 +1,15 @@
+{{- $config := ds "config" -}}
+#!/bin/sh
+set -e
+
+{{- range $service := $config.services.enable_start }}
+/etc/init.d/{{ $service }} enable || true
+/etc/init.d/{{ $service }} start || true
+
+{{- end }}
+{{- range $service := $config.services.disable_stop }}
+/etc/init.d/{{ $service }} disable || true
+/etc/init.d/{{ $service }} stop || true
+
+{{- end }}
+exit 0

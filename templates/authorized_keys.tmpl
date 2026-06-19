@@ -1,0 +1,4 @@
+{{- $config := ds "config" -}}
+{{- range $key := $config.authorized_keys }}
+{{ $key }}
+{{- end }}

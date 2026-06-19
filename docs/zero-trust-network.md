@@ -4,6 +4,10 @@ This network uses default-deny routed segmentation. Each VLAN has one security
 role, and cross-zone traffic is allowed only when a rule explicitly describes the
 source, destination, protocol, and destination port.
 
+The source of truth is `config/router.yaml` plus encrypted
+`config/secrets.sops.yaml`. Final OpenWrt files are rendered into `build/files/`
+and are not tracked in Git.
+
 ## Design Goals
 
 - Keep public application access outside the LAN policy by using Cloudflare ZTNA
@@ -130,19 +134,19 @@ lands on the admin VLAN.
 Allow rules use this format:
 
 ```text
-Allow-<SRC>-to-<DST>-<SERVICE>
+Allow-<src>-to-<dest>-<proto>-<port>
 ```
 
 For router input rules, use `Router` as the destination:
 
 ```text
-Allow-VLAN10-to-Router-SSH
+Allow-vlan10-to-router-tcp-22
 ```
 
 For WAN-exposed router services, use `WAN` as the source:
 
 ```text
-Allow-WAN-to-Router-WireGuard
+Allow-wan-to-router-udp-51820
 ```
 
 ## Boundaries
