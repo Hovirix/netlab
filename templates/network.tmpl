@@ -1,15 +1,9 @@
-{{- $network := ds "network" -}}
+{{- $config := ds "config" -}}
+{{- $secrets := ds "secrets" -}}
+{{- $network := $secrets.network -}}
 {{- $map := index $network "map-e" -}}
 {{- $wireguard := index $network "wireguard" -}}
-{{- $vlan := index $map "vlan_id" -}}
-{{- $peer := index $map "peeraddr" -}}
-{{- $ip := index $map "ipaddr" -}}
-{{- $prefix := index $map "ip6prefix" -}}
-{{- $prefixlen := index $map "ip6prefixlen" -}}
 {{- $wgServer := index $wireguard "server" -}}
-{{- $wgPeers := index $wireguard "peers" -}}
-{{- $wgServerPrivateKey := index $wgServer "private_key" -}}
-
 config interface 'loopback'
 	option device 'lo'
 	option proto 'static'
@@ -20,120 +14,67 @@ config globals 'globals'
 	option packet_steering '2'
 
 config device
-	option name 'br-lan'
+	option name '{{ $config.switch.bridge }}'
 	option type 'bridge'
-	list ports 'lan1'
-	list ports 'lan2'
-	list ports 'lan3'
-	list ports 'lan4'
-	list ports 'lan5'
+{{- range $port := $config.switch.ports }}
+	list ports '{{ $port }}'
+{{- end }}
 	option ipv6 '0'
 
+{{- range $key, $vlan := $config.vlans }}
 config bridge-vlan
-	option device 'br-lan'
-	option vlan '10'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-	list ports 'lan5:u*'
+	option device '{{ $config.switch.bridge }}'
+	option vlan '{{ $vlan.id }}'
+{{- range $port := index $config.switch.vlans $key }}
+	list ports '{{ $port }}'
+{{- end }}
 
-config bridge-vlan
-	option device 'br-lan'
-	option vlan '20'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-
-config bridge-vlan
-	option device 'br-lan'
-	option vlan '30'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-	list ports 'lan3:u*'
-
-config bridge-vlan
-	option device 'br-lan'
-	option vlan '40'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-
-config bridge-vlan
-	option device 'br-lan'
-	option vlan '50'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-
-config bridge-vlan
-	option device 'br-lan'
-	option vlan '60'
-	list ports 'lan1:t'
-	list ports 'lan2:t'
-
-config interface 'vlan10'
+{{- end }}
+{{- range $key, $vlan := $config.vlans }}
+config interface 'vlan{{ $vlan.id }}'
 	option proto 'static'
-	option device 'br-lan.10'
-	list ipaddr '10.10.0.1/24'
+	option device '{{ $config.switch.bridge }}.{{ $vlan.id }}'
+	list ipaddr '{{ $vlan.cidr }}'
 
-config interface 'vlan20'
-	option proto 'static'
-	option device 'br-lan.20'
-	list ipaddr '10.20.0.1/24'
-
-config interface 'vlan30'
-	option proto 'static'
-	option device 'br-lan.30'
-	list ipaddr '10.30.0.1/24'
-
-config interface 'vlan40'
-	option proto 'static'
-	option device 'br-lan.40'
-	list ipaddr '10.40.0.1/24'
-
-config interface 'vlan50'
-	option proto 'static'
-	option device 'br-lan.50'
-	list ipaddr '10.50.0.1/24'
-
-config interface 'vlan60'
-	option proto 'static'
-	option device 'br-lan.60'
-	list ipaddr '10.60.0.1/24'
-
+{{- end }}
 config device
 	option type '8021q'
-	option ifname 'eth1'
-	option vid '{{ $vlan }}'
-	option name 'eth1.{{ $vlan }}'
+	option ifname '{{ $config.network.wan6.device }}'
+	option vid '{{ index $map "vlan_id" }}'
+	option name '{{ $config.network.wan6.device }}.{{ index $map "vlan_id" }}'
 
 config interface 'wan6'
 	option proto 'dhcpv6'
-	option device 'eth1.{{ $vlan }}'
+	option device '{{ $config.network.wan6.device }}.{{ index $map "vlan_id" }}'
 	option reqaddress 'try'
 	option reqprefix 'auto'
 	option norelease '1'
-	option clientid '000300019483C4B743C5'
+	option clientid '{{ $config.network.wan6.client_id }}'
 	option peerdns '0'
-	list dns '127.0.0.1'
-	list dns '::1'
+{{- range $dns := $config.network.wan6.dns }}
+	list dns '{{ $dns }}'
+{{- end }}
 
 config interface 'wan'
 	option proto 'map'
-	option maptype 'map-e'
-	option peeraddr '{{ $peer }}'
-	option ipaddr '{{ $ip }}'
-	option ip6prefix '{{ $prefix }}'
-	option ip6prefixlen '{{ $prefixlen }}'
+	option maptype '{{ $config.network.wan.map_type }}'
+	option peeraddr '{{ index $map "peeraddr" }}'
+	option ipaddr '{{ index $map "ipaddr" }}'
+	option ip6prefix '{{ index $map "ip6prefix" }}'
+	option ip6prefixlen '{{ index $map "ip6prefixlen" }}'
 	option tunlink 'wan6'
 
-config interface 'vpn'
+config interface '{{ $config.network.vpn.name }}'
 	option proto 'wireguard'
-	option private_key '{{ $wgServerPrivateKey }}'
-	option listen_port '51820'
-	list addresses '10.255.0.1/24'
+	option private_key '{{ index $wgServer "private_key" }}'
+	option listen_port '{{ $config.network.vpn.listen_port }}'
+	list addresses '{{ $config.network.vpn.address }}'
 
-{{- range $idx, $wgPeer := $wgPeers }}
+{{- range $peer := index $wireguard "peers" }}
 config wireguard_vpn
-	option description '{{ index $wgPeer "description" }}'
-	option public_key '{{ index $wgPeer "public_key" }}'
-	option preshared_key '{{ index $wgPeer "preshared_key" }}'
-	list allowed_ips '{{ index $wgPeer "allowed_ip" }}'
+	option description '{{ index $peer "description" }}'
+	option public_key '{{ index $peer "public_key" }}'
+	option preshared_key '{{ index $peer "preshared_key" }}'
+	list allowed_ips '{{ index $peer "allowed_ip" }}'
 
 {{- end }}

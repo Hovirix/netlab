@@ -1,6 +1,0 @@
-wifi:
-  country: US
-  name: NetLab
-  password:
-    2g: test-passphrase-2g
-    5g: test-passphrase-5g

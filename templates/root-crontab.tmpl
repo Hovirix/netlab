@@ -1,0 +1,4 @@
+{{- $config := ds "config" -}}
+{{- range $line := $config.crontab.root }}
+{{ $line }}
+{{- end }}

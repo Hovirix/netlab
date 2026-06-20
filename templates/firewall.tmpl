@@ -1,0 +1,104 @@
+{{- $config := ds "config" -}}
+{{- $fw := $config.firewall -}}
+config defaults
+	option input '{{ $fw.defaults.input }}'
+	option output '{{ $fw.defaults.output }}'
+	option forward '{{ $fw.defaults.forward }}'
+	option synflood_protect '1'
+	option flow_offloading '1'
+	option flow_offloading_hw '1'
+
+config zone
+	option name 'wan'
+	option input 'DROP'
+	option output 'ACCEPT'
+	option forward 'DROP'
+	list network 'wan6'
+	list network 'wan'
+	option masq '1'
+	option mtu_fix '1'
+
+{{- range $key, $vlan := $config.vlans }}
+config zone
+	option name 'vlan{{ $vlan.id }}'
+	option input 'DROP'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	list network 'vlan{{ $vlan.id }}'
+
+{{- end }}
+config zone
+	option name 'vpn'
+	option input 'DROP'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	list network 'vpn'
+
+{{- range $key, $vlan := $config.vlans }}
+{{- if $vlan.wan }}
+config forwarding
+	option src 'vlan{{ $vlan.id }}'
+	option dest 'wan'
+
+{{- end }}
+{{- end }}
+config forwarding
+	option src 'vpn'
+	option dest 'wan'
+
+{{- range $rule := $fw.router_access }}
+{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{- end }}
+{{- range $rule := $fw.management_flows }}
+{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{- end }}
+{{- range $rule := $fw.data_flows }}
+{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{- end }}
+{{- range $rule := $fw.wan_rules }}
+{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{- end }}
+{{- range $key, $vlan := $config.vlans }}
+{{ template "rule" (dict "rule" (dict "src" $key "proto" "tcp" "port" "53") "vlans" $config.vlans) }}
+{{ template "rule" (dict "rule" (dict "src" $key "proto" "udp" "port" "53") "vlans" $config.vlans) }}
+{{- if $vlan.dhcp }}
+{{ template "rule" (dict "rule" (dict "src" $key "proto" "udp" "src_port" "68" "port" "67") "vlans" $config.vlans) }}
+{{- end }}
+{{- end }}
+{{- define "rule" }}
+{{- $rule := .rule -}}
+{{- $vlans := .vlans -}}
+{{- $srcName := index $rule "src" -}}
+{{- $src := $srcName -}}
+{{- with index $vlans $srcName }}{{ $src = printf "vlan%d" .id }}{{ end -}}
+{{- $destName := index $rule "dest" -}}
+{{- $dest := "router" -}}
+{{- if $destName }}
+{{- $dest = $destName -}}
+{{- with index $vlans $destName }}{{ $dest = printf "vlan%d" .id }}{{ end -}}
+{{- end }}
+config rule
+	option name 'Allow-{{ $src }}-to-{{ $dest }}-{{ index $rule "proto" }}-{{ if index $rule "port" }}{{ index $rule "port" }}{{ else }}icmp{{ end }}'
+	option src '{{ $src }}'
+{{- if $destName }}
+	option dest '{{ $dest }}'
+{{- end }}
+	option proto '{{ index $rule "proto" }}'
+{{- if index $rule "src_port" }}
+	option src_port '{{ index $rule "src_port" }}'
+{{- end }}
+{{- if index $rule "port" }}
+	option dest_port '{{ index $rule "port" }}'
+{{- end }}
+{{- range $icmpType := index $rule "icmp_types" }}
+	list icmp_type '{{ $icmpType }}'
+{{- end }}
+{{- if index $rule "limit" }}
+	option limit '{{ index $rule "limit" }}'
+{{- end }}
+{{- if index $rule "family" }}
+	option family '{{ index $rule "family" }}'
+{{- end }}
+	option target 'ACCEPT'
+
+{{- end }}
