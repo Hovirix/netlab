@@ -21,8 +21,7 @@ config device
 {{- end }}
 	option ipv6 '0'
 
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 config bridge-vlan
 	option device '{{ $config.switch.bridge }}'
 	option vlan '{{ $vlan.id }}'
@@ -31,8 +30,7 @@ config bridge-vlan
 {{- end }}
 
 {{- end }}
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 config interface 'vlan{{ $vlan.id }}'
 	option proto 'static'
 	option device '{{ $config.switch.bridge }}.{{ $vlan.id }}'

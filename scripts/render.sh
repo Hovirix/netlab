@@ -15,31 +15,18 @@ adguardhome_dir="$stage_dir/etc/adguardhome"
 dropbear_dir="$stage_dir/etc/dropbear"
 crontabs_dir="$stage_dir/etc/crontabs"
 uci_defaults_dir="$stage_dir/etc/uci-defaults"
-placeholder_mode=false
-
-if [ "${1:-}" = "--placeholder" ]; then
-  placeholder_mode=true
-fi
 
 rm -rf "$generated_dir" "$stage_dir"
 mkdir -p "$generated_dir" "$config_dir" "$adguardhome_dir" "$dropbear_dir" "$crontabs_dir" "$uci_defaults_dir"
 
-if [ "$placeholder_mode" = true ]; then
-  secrets_source="$repo_root/config/secrets.placeholder.yaml"
-else
-  secrets_source="${SECRETS_FILE:-$repo_root/config/secrets.sops.yaml}"
-fi
+secrets_source="${SECRETS_FILE:-$repo_root/config/secrets.sops.yaml}"
 
 if [ ! -r "$secrets_source" ]; then
   printf 'Error: secrets file not found or unreadable: %s\n' "$secrets_source" >&2
   exit 1
 fi
 
-if [ "$placeholder_mode" = true ]; then
-  cp "$secrets_source" "$generated_dir/secrets.yaml"
-else
-  sops -d "$secrets_source" >"$generated_dir/secrets.yaml"
-fi
+sops -d "$secrets_source" >"$generated_dir/secrets.yaml"
 
 gomplate_args=(
   --datasource "config=file://$repo_root/config/router.yaml"

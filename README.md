@@ -22,7 +22,7 @@ Enter the tool shell:
 nix develop
 ```
 
-Validate with placeholder secrets:
+Validate with encrypted secrets:
 
 ```bash
 just validate
@@ -51,7 +51,6 @@ just clean
 ```text
 config/router.yaml          non-secret source model
 config/secrets.sops.yaml    encrypted runtime secrets
-config/secrets.placeholder.yaml non-secret validation placeholder
 templates/                  one template per rendered OpenWrt file
 scripts/                    thin render/validate/build glue
 build/                      ignored generated output

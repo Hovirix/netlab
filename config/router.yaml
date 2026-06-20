@@ -3,20 +3,19 @@ build:
   target: mediatek
   subtarget: filogic
   profile: glinet_gl-mt6000
+  imagebuilder_hash: sha256-/n8Dt0jvac4L4RgvJ+PnLj3VJGMovQlB5CdKg3pWFCw=
+
   packages:
     - adguardhome
     - etherwake
     - irqbalance
     - map
-    - kmod-wireguard
     - wireguard-tools
-  imagebuilder_hash: sha256-/n8Dt0jvac4L4RgvJ+PnLj3VJGMovQlB5CdKg3pWFCw=
+
   router:
     host: 10.10.0.1
     user: root
     port: 22
-
-vlan_order: [admin, proxmox, storage, talos, clients, lab]
 
 vlans:
   admin:
@@ -25,30 +24,35 @@ vlans:
     cidr: 10.10.0.1/24
     dhcp: true
     wan: true
+
   proxmox:
     id: 20
     gateway: 10.20.0.1
     cidr: 10.20.0.1/24
     dhcp: false
     wan: true
+
   storage:
     id: 30
     gateway: 10.30.0.1
     cidr: 10.30.0.1/24
     dhcp: true
     wan: true
+
   talos:
     id: 40
     gateway: 10.40.0.1
     cidr: 10.40.0.1/24
     dhcp: true
     wan: true
+
   clients:
     id: 50
     gateway: 10.50.0.1
     cidr: 10.50.0.1/24
     dhcp: true
     wan: true
+
   lab:
     id: 60
     gateway: 10.60.0.1
@@ -58,22 +62,52 @@ vlans:
 
 switch:
   bridge: br-lan
-  ports: [lan1, lan2, lan3, lan4, lan5]
+
+  ports:
+    - lan1
+    - lan2
+    - lan3
+    - lan4
+    - lan5
+
   vlans:
-    admin: ['lan1:t', 'lan2:t', 'lan5:u*']
-    proxmox: ['lan1:t', 'lan2:t']
-    storage: ['lan1:t', 'lan2:t', 'lan3:u*']
-    talos: ['lan1:t', 'lan2:t']
-    clients: ['lan1:t', 'lan2:t']
-    lab: ['lan1:t', 'lan2:t']
+    admin:
+      - lan1:t
+      - lan2:t
+      - lan5:u*
+
+    proxmox:
+      - lan1:t
+      - lan2:t
+
+    storage:
+      - lan1:t
+      - lan2:t
+      - lan3:u*
+
+    talos:
+      - lan1:t
+      - lan2:t
+
+    clients:
+      - lan1:t
+      - lan2:t
+
+    lab:
+      - lan1:t
+      - lan2:t
 
 network:
-  wan6:
-    device: eth1
-    client_id: '000300019483C4B743C5'
-    dns: [127.0.0.1, '::1']
   wan:
     map_type: map-e
+
+  wan6:
+    device: eth1
+    client_id: "000300019483C4B743C5"
+    dns:
+      - "127.0.0.1"
+      - "::1"
+
   vpn:
     name: vpn
     listen_port: 51820
@@ -84,6 +118,7 @@ dhcp:
     name: main
     port: 0
     authoritative: true
+
   pools:
     start: 100
     limit: 150
@@ -100,48 +135,176 @@ firewall:
     flow_offloading_hw: true
 
   router_access:
-    - {src: wan, proto: udp, port: 51820, reason: WireGuard listener}
-    - {src: admin, proto: tcp, port: 443, reason: Router HTTPS}
-    - {src: admin, proto: tcp, port: 3000, reason: AdGuardHome UI}
-    - {src: admin, proto: tcp, port: 22, reason: Router SSH}
-    - {src: vpn, proto: tcp, port: 443, reason: Remote router HTTPS}
-    - {src: vpn, proto: tcp, port: 22, reason: Remote router SSH}
-    - {src: vpn, proto: tcp, port: 3000, reason: Remote AdGuardHome UI}
-    - {src: vpn, proto: tcp, port: 53, reason: Remote DNS TCP}
-    - {src: vpn, proto: udp, port: 53, reason: Remote DNS UDP,}
+    - src: wan
+      proto: udp
+      port: 51820
+      reason: WireGuard listener
+
+    - src: admin
+      proto: tcp
+      port: 443
+      reason: Router HTTPS
+
+    - src: admin
+      proto: tcp
+      port: 3000
+      reason: AdGuardHome UI
+
+    - src: admin
+      proto: tcp
+      port: 22
+      reason: Router SSH
+
+    - src: vpn
+      proto: tcp
+      port: 443
+      reason: Remote router HTTPS
+
+    - src: vpn
+      proto: tcp
+      port: 22
+      reason: Remote router SSH
+
+    - src: vpn
+      proto: tcp
+      port: 3000
+      reason: Remote AdGuardHome UI
+
+    - src: vpn
+      proto: tcp
+      port: 53
+      reason: Remote DNS TCP
+
+    - src: vpn
+      proto: udp
+      port: 53
+      reason: Remote DNS UDP
 
   management_flows:
-    - {src: admin, dest: proxmox, proto: tcp, port: 8006, reason: Proxmox HTTPS}
-    - {src: admin, dest: proxmox, proto: tcp, port: 22, reason: Proxmox SSH}
-    - {src: admin, dest: storage, proto: tcp, port: 443, reason: TrueNAS HTTPS}
-    - {src: admin, dest: storage, proto: tcp, port: 22, reason: TrueNAS SSH}
-    - {src: admin, dest: talos, proto: tcp, port: 50000, reason: Talos API}
-    - {src: admin, dest: talos, proto: tcp, port: 6443, reason: Kubernetes API}
-    - {src: vpn, dest: proxmox, proto: tcp, port: 8006, reason: Remote Proxmox HTTPS}
-    - {src: vpn, dest: proxmox, proto: tcp, port: 22, reason: Remote Proxmox SSH}
-    - {src: vpn, dest: storage, proto: tcp, port: 443, reason: Remote TrueNAS HTTPS}
-    - {src: vpn, dest: storage, proto: tcp, port: 22, reason: Remote TrueNAS SSH}
-    - {src: vpn, dest: talos, proto: tcp, port: 50000, reason: Remote Talos API}
-    - {src: vpn, dest: talos, proto: tcp, port: 6443, reason: Remote Kubernetes API,}
+    - src: admin
+      dest: proxmox
+      proto: tcp
+      port: 8006
+      reason: Proxmox HTTPS
+
+    - src: admin
+      dest: proxmox
+      proto: tcp
+      port: 22
+      reason: Proxmox SSH
+
+    - src: admin
+      dest: storage
+      proto: tcp
+      port: 443
+      reason: TrueNAS HTTPS
+
+    - src: admin
+      dest: storage
+      proto: tcp
+      port: 22
+      reason: TrueNAS SSH
+
+    - src: admin
+      dest: talos
+      proto: tcp
+      port: 50000
+      reason: Talos API
+
+    - src: admin
+      dest: talos
+      proto: tcp
+      port: 6443
+      reason: Kubernetes API
+
+    - src: vpn
+      dest: proxmox
+      proto: tcp
+      port: 8006
+      reason: Remote Proxmox HTTPS
+
+    - src: vpn
+      dest: proxmox
+      proto: tcp
+      port: 22
+      reason: Remote Proxmox SSH
+
+    - src: vpn
+      dest: storage
+      proto: tcp
+      port: 443
+      reason: Remote TrueNAS HTTPS
+
+    - src: vpn
+      dest: storage
+      proto: tcp
+      port: 22
+      reason: Remote TrueNAS SSH
+
+    - src: vpn
+      dest: talos
+      proto: tcp
+      port: 50000
+      reason: Remote Talos API
+
+    - src: vpn
+      dest: talos
+      proto: tcp
+      port: 6443
+      reason: Remote Kubernetes API
 
   data_flows:
-    - {src: proxmox, dest: storage, proto: tcp, port: 2049, reason: NFSv4}
-    - {src: talos, dest: storage, proto: tcp, port: 2049, reason: NFSv4,}
+    - src: proxmox
+      dest: storage
+      proto: tcp
+      port: 2049
+      reason: NFSv4
+
+    - src: talos
+      dest: storage
+      proto: tcp
+      port: 2049
+      reason: NFSv4
 
   wan_rules:
-    - {src: wan, proto: udp, src_port: 547, port: 546, family: ipv6, reason: DHCPv6 client replies}
+    - src: wan
+      proto: udp
+      src_port: 547
+      port: 546
+      family: ipv6
+      reason: DHCPv6 client replies
+
     - src: wan
       proto: icmp
       family: ipv6
       limit: 1000/sec
-      icmp_types: [echo-request, echo-reply, destination-unreachable, packet-too-big, time-exceeded, bad-header, unknown-header-type, router-solicitation, neighbour-solicitation, router-advertisement, neighbour-advertisement]
+      icmp_types:
+        - echo-request
+        - echo-reply
+        - destination-unreachable
+        - packet-too-big
+        - time-exceeded
+        - bad-header
+        - unknown-header-type
+        - router-solicitation
+        - neighbour-solicitation
+        - router-advertisement
+        - neighbour-advertisement
       reason: Required IPv6 control traffic to router
+
     - src: wan
-      dest: '*'
+      dest: "*"
       proto: icmp
       family: ipv6
       limit: 1000/sec
-      icmp_types: [echo-request, echo-reply, destination-unreachable, packet-too-big, time-exceeded, bad-header, unknown-header-type]
+      icmp_types:
+        - echo-request
+        - echo-reply
+        - destination-unreachable
+        - packet-too-big
+        - time-exceeded
+        - bad-header
+        - unknown-header-type
       reason: Required forwarded IPv6 ICMP
 
 wireless:
@@ -150,33 +313,46 @@ wireless:
       path: platform/soc/18000000.wifi
       band: 2g
       htmode: HE40
+
     - name: radio1
       path: platform/soc/18000000.wifi+1
       band: 5g
       htmode: HE160
+
   interfaces:
     - name: wifinet0
       device: radio0
-      suffix: '2.4'
+      suffix: "2.4"
       secret_key: 2g
       network: clients
       isolate: true
+
     - name: wifinet1
       device: radio1
-      suffix: '5'
+      suffix: "5"
       secret_key: 5g
       network: admin
       isolate: false
 
 adguardhome:
   http_address: 10.10.0.1:3000
+
   dns:
-    bind_hosts: [0.0.0.0]
+    bind_hosts:
+      - 0.0.0.0
+
     port: 53
+
     upstream_dns:
       - https://dns11.quad9.net/dns-query
       - https://family.dns.mullvad.net/dns-query
-    bootstrap_dns: [9.9.9.11, 149.112.112.11, '2620:fe::11', '2620:fe::fe:11']
+
+    bootstrap_dns:
+      - 9.9.9.11
+      - 149.112.112.11
+      - "2620:fe::11"
+      - "2620:fe::fe:11"
+
     upstream_mode: parallel
     use_http3_upstreams: true
     cache_enabled: true
@@ -184,39 +360,46 @@ adguardhome:
     cache_optimistic: true
     enable_dnssec: true
     serve_http3: true
+
   filters:
     - enabled: true
       url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt
-      name: HaGeZi's Threat Intelligence Feeds DNS Blocklist
+      name: "HaGeZi's Threat Intelligence Feeds DNS Blocklist"
       id: 1770480370
+
     - enabled: true
       url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/spam-tlds.txt
-      name: HaGeZi's The World's Most Abused TLDs
+      name: "HaGeZi's The World's Most Abused TLDs"
       id: 1770480371
+
     - enabled: true
       url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/ultimate.txt
-      name: HaGeZi's Ultimate DNS Blocklist
+      name: "HaGeZi's Ultimate DNS Blocklist"
       id: 1770480372
+
     - enabled: true
       url: https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adguard/dns-rebind-protection.txt
-      name: HaGeZi's DNS Rebind Protection
+      name: "HaGeZi's DNS Rebind Protection"
       id: 1770480373
 
 dropbear:
   name: main
-  password_auth: 'off'
-  root_password_auth: 'off'
+  password_auth: "off"
+  root_password_auth: "off"
   port: 22
-  direct: 1
-
-authorized_keys:
-  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBjCf1PpvoMshFkoyjFOYUJ6/pLexwEFqr29COJawkoB
+  authorized_keys:
+    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBjCf1PpvoMshFkoyjFOYUJ6/pLexwEFqr29COJawkoB
 
 crontab:
   root:
-    - '0 */2 * * * /sbin/ifdown wan; /sbin/ifdown wan6; sleep 5; /sbin/ifup wan6; sleep 5; /sbin/ifup wan'
-    - '0 0,12 * * * /sbin/reboot'
+    - "0 */2 * * * /sbin/ifdown wan; /sbin/ifdown wan6; sleep 5; /sbin/ifup wan6; sleep 5; /sbin/ifup wan"
+    - "0 0,12 * * * /sbin/reboot"
 
 services:
-  enable_start: [cron, adguardhome, irqbalance]
-  disable_stop: [odhcpd]
+  enable:
+    - cron
+    - adguardhome
+    - irqbalance
+
+  disable:
+    - odhcpd

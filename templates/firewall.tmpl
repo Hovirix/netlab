@@ -18,8 +18,7 @@ config zone
 	option masq '1'
 	option mtu_fix '1'
 
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 config zone
 	option name 'vlan{{ $vlan.id }}'
 	option input 'DROP'
@@ -35,8 +34,7 @@ config zone
 	option forward 'REJECT'
 	list network 'vpn'
 
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 {{- if $vlan.wan }}
 config forwarding
 	option src 'vlan{{ $vlan.id }}'
@@ -60,8 +58,7 @@ config forwarding
 {{- range $rule := $fw.wan_rules }}
 {{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
 {{- end }}
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 {{ template "rule" (dict "rule" (dict "src" $key "proto" "tcp" "port" "53") "vlans" $config.vlans) }}
 {{ template "rule" (dict "rule" (dict "src" $key "proto" "udp" "port" "53") "vlans" $config.vlans) }}
 {{- if $vlan.dhcp }}

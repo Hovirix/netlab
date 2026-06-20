@@ -14,10 +14,9 @@ reading every firewall rule directly.
 ## Source Of Truth
 
 The non-secret model lives in `config/router.yaml`. Runtime secrets live in
-`config/secrets.sops.yaml`. Non-secret validation placeholders live in
-`config/secrets.placeholder.yaml`. Templates under `templates/` render final
-OpenWrt files into `build/files/`, which is passed to ImageBuilder as the
-firmware overlay.
+`config/secrets.sops.yaml`. Templates under `templates/` render final OpenWrt
+files into `build/files/`, which is passed to ImageBuilder as the firmware
+overlay.
 
 | Config | Rendered Path |
 | --- | --- |

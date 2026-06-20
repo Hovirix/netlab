@@ -1,16 +1,14 @@
 {{- $config := ds "config" -}}
 config dnsmasq '{{ $config.dhcp.dnsmasq.name }}'
 	option port '{{ $config.dhcp.dnsmasq.port }}'
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 {{- if $vlan.dhcp }}
 	list interface 'vlan{{ $vlan.id }}'
 {{- end }}
 {{- end }}
 	option authoritative '1'
 
-{{- range $key := $config.vlan_order }}
-{{- $vlan := index $config.vlans $key }}
+{{- range $key, $vlan := $config.vlans }}
 {{- if $vlan.dhcp }}
 config dhcp 'vlan{{ $vlan.id }}'
 	option interface 'vlan{{ $vlan.id }}'

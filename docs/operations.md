@@ -8,7 +8,7 @@ This repo uses Gomplate templates to render final OpenWrt config files into
 | Command | Purpose |
 | --- | --- |
 | `nix develop` | Enter the reproducible tool shell. |
-| `just validate` | Render placeholder secrets and validate generated UCI. |
+| `just validate` | Decrypt SOPS secrets and validate generated UCI. |
 | `just render` | Decrypt SOPS secrets and render `build/files`. |
 | `just build` | Render real config and build firmware with ImageBuilder. |
 | `just clean` | Remove `build/`. |

@@ -1,5 +1,3 @@
-- When asked about the architecture of networking, follow the NETWORK MODEL.
-
 ## Role
 
 You are a network engineer responsible for an OpenWrt firmware configuration for a homelab infrastructure.
@@ -11,7 +9,6 @@ The project uses the OpenWrt ImageBuilder to build the final firmware.
 
 - `config/router.yaml` is the non-secret source model.
 - `config/secrets.sops.yaml` contains encrypted runtime secrets.
-- `config/secrets.placeholder.yaml` contains non-secret validation placeholders.
 - Templates under `templates/` map directly to rendered OpenWrt files.
 - Generated OpenWrt files are written under ignored `build/files/`.
 - There is no tracked static firmware overlay.
@@ -21,12 +18,10 @@ The project uses the OpenWrt ImageBuilder to build the final firmware.
 Nix is only used for the developer shell and formatter. The build pipeline is
 run with Just and thin shell scripts.
 
-1. `just validate`: renders placeholder secrets and validates generated UCI config.
+1. `just validate`: decrypts SOPS secrets and validates generated UCI config.
 1. `just render`: decrypts SOPS secrets and renders `build/files/`.
 1. `just build`: renders real config and builds firmware with ImageBuilder.
 1. `just clean`: removes generated `build/` state.
-
-Use `nix develop` to enter the tool shell before running Just commands.
 
 ## Reviewing Model
 

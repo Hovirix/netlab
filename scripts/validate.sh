@@ -7,7 +7,7 @@ else
   repo_root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD")"
 fi
 
-"$repo_root/scripts/render.sh" --placeholder
+"$repo_root/scripts/render.sh"
 
 config_dir="${BUILD_DIR:-$repo_root/build}/files/etc/config"
 uci -c "$config_dir" -q show network >/dev/null
