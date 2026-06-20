@@ -72,8 +72,6 @@ switch:
 
   vlans:
     admin:
-      - lan1:t
-      - lan2:t
       - lan5:u*
 
     proxmox:
@@ -81,17 +79,13 @@ switch:
       - lan2:t
 
     storage:
-      - lan1:t
-      - lan2:t
       - lan3:u*
 
     talos:
       - lan1:t
       - lan2:t
 
-    clients:
-      - lan1:t
-      - lan2:t
+    clients: []
 
     lab:
       - lan1:t
