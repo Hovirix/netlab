@@ -7,7 +7,12 @@ render:
 	./scripts/render.sh
 
 build:
+	./scripts/validate.sh
+	./scripts/render.sh
 	./scripts/build.sh
+
+deploy:
+	./scripts/deploy.sh
 
 clean:
 	rm -rf build
