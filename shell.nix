@@ -7,9 +7,12 @@ pkgs.mkShell {
     gnumake
     gnutar
     just
+    openssh
     pre-commit
     sops
     uci
+    unzip
+    wget
     zstd
   ];
 }

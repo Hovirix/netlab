@@ -40,6 +40,12 @@ Build firmware into `build/artifacts`:
 just build
 ```
 
+Deploy the built sysupgrade image to the configured router:
+
+```bash
+just deploy
+```
+
 Clean generated state:
 
 ```bash

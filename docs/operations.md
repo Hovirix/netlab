@@ -11,6 +11,7 @@ This repo uses Gomplate templates to render final OpenWrt config files into
 | `just validate` | Decrypt SOPS secrets and validate generated UCI. |
 | `just render` | Decrypt SOPS secrets and render `build/files`. |
 | `just build` | Render real config and build firmware with ImageBuilder. |
+| `just deploy` | Upload the built sysupgrade image with `scp -O` and run `sysupgrade -n`. |
 | `just clean` | Remove `build/`. |
 
 ## Generated Files
@@ -50,6 +51,10 @@ these access paths remain present:
 | Router HTTPS | `vlan10 -> router` TCP `443` works if LuCI or HTTPS admin is used. |
 | AdGuard Home UI | `vlan10 -> router` TCP `3000` works. |
 | WireGuard | WAN UDP `51820` reaches the router. |
+
+`just deploy` reads the target from `config/router.yaml`, uploads the matching
+sysupgrade artifact from `build/artifacts` to `/tmp` with `scp -O`, then runs
+`sysupgrade -n` over SSH. Build first with `just build`.
 
 After deploying to the router, validate firewall syntax before restarting it:
 
