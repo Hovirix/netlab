@@ -9,6 +9,7 @@ pkgs.mkShell {
     just
     openssh
     pre-commit
+    python3
     sops
     uci
     unzip

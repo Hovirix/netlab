@@ -11,6 +11,9 @@ build:
 	./scripts/render.sh
 	./scripts/build.sh
 
+update:
+	./scripts/update.sh
+
 deploy:
 	./scripts/deploy.sh
 

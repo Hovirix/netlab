@@ -11,8 +11,29 @@ This repo uses Gomplate templates to render final OpenWrt config files into
 | `just validate` | Decrypt SOPS secrets and validate generated UCI. |
 | `just render` | Decrypt SOPS secrets and render `build/files`. |
 | `just build` | Render real config and build firmware with ImageBuilder. |
+| `just update` | Update the OpenWrt release and pinned ImageBuilder hash without decrypting secrets. |
 | `just deploy` | Upload the built sysupgrade image with `scp -O` and run `sysupgrade -n`. |
 | `just clean` | Remove `build/`. |
+
+## CI And Updates
+
+GitHub Actions are intentionally non-secret. CI must not receive SOPS keys,
+decrypt `config/secrets.sops.yaml`, render the real runtime overlay, build
+firmware, or deploy to the router.
+
+| Automation | Scope | Secrets Required |
+| --- | --- | --- |
+| `check.yml` | Runs `nix flake check` for formatting and Nix evaluation. | no |
+| Renovate | Opens PRs for `flake.lock` input updates and GitHub Actions versions. | no |
+| `update-openwrt.yml` | Opens PRs for `build.openwrt_version` and `build.imagebuilder_hash`. | no |
+
+OpenWrt update PRs only update public release metadata in `config/router.yaml`.
+Review and validate them locally before merge or deployment:
+
+```bash
+just validate
+just build
+```
 
 ## Generated Files
 

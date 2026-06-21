@@ -1,0 +1,36 @@
+name: Update OpenWrt
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: OpenWrt release and hash
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Update OpenWrt metadata
+        id: update
+        run: |
+          nix develop --command just update
+          version=$(nix develop --command gomplate --datasource "config=file://$PWD/config/router.yaml" --in '{{ (ds "config").build.openwrt_version }}')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v8.1.1
+        with:
+          branch: chore/update-openwrt
+          delete-branch: true
+          title: "chore(build): update OpenWrt to ${{ steps.update.outputs.version }}"
+          commit-message: "chore(build): update OpenWrt to ${{ steps.update.outputs.version }}"
