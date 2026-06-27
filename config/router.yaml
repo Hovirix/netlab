@@ -248,6 +248,12 @@ firewall:
       reason: Remote Kubernetes API
 
   data_flows:
+    - src: admin
+      dest: storage
+      proto: tcp
+      port: 2049
+      reason: NFSv4
+
     - src: proxmox
       dest: storage
       proto: tcp

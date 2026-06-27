@@ -116,6 +116,7 @@ rendered from SOPS-managed credentials during firmware build.
 
 | Rule | Source | Destination | Port | Purpose |
 | --- | --- | --- | --- | --- |
+| `Allow-VLAN10-to-VLAN30-NFSv4` | `vlan10` | `vlan30` | TCP `2049` | Admin Wi-Fi/client access to TrueNAS NFSv4 storage. |
 | `Allow-VLAN20-to-VLAN30-NFSv4` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
 | `Allow-VLAN40-to-VLAN30-NFSv4` | `vlan40` | `vlan30` | TCP `2049` | Kubernetes to TrueNAS NFSv4 storage. |
 
