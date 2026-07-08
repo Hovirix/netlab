@@ -133,7 +133,7 @@ dhcp:
     - name: prod-k8s-cp-03
       vlan: talos
       mac: "02:40:00:00:00:03"
-      ip: 10.40.0.11
+      ip: 10.40.0.13
 
 firewall:
   defaults:
