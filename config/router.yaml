@@ -121,17 +121,14 @@ dhcp:
 
   static_leases:
     - name: prod-k8s-cp-01
-      vlan: talos
       mac: "02:40:00:00:00:01"
       ip: 10.40.0.11
 
     - name: prod-k8s-cp-02
-      vlan: talos
       mac: "02:40:00:00:00:02"
       ip: 10.40.0.12
 
     - name: prod-k8s-cp-03
-      vlan: talos
       mac: "02:40:00:00:00:03"
       ip: 10.40.0.13
 
