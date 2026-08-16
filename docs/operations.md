@@ -56,7 +56,9 @@ OpenWrt update PRs only update public release metadata in `config/router.yaml`.
 The updater verifies the target-level signed `sha256sums` manifest with the
 vendored OpenWrt Build System public key before it downloads and pins the
 ImageBuilder archive hash. The update workflow runs non-secret checks before
-it opens a PR; PRs created with `GITHUB_TOKEN` do not trigger `check.yml`.
+it opens a PR. Generated PRs include the full upstream release notes for every
+release in the updated version range; PRs created with `GITHUB_TOKEN` do not
+trigger `check.yml`.
 Review and validate them locally before merge or deployment:
 
 ```bash

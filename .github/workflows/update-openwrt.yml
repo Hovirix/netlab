@@ -40,6 +40,7 @@ jobs:
         with:
           add-paths: config/router.yaml
           branch: chore/update-openwrt
+          body-path: build/openwrt-release-notes.md
           delete-branch: true
           title: "chore(build): update OpenWrt to ${{ steps.update.outputs.version }}"
           commit-message: "chore(build): update OpenWrt to ${{ steps.update.outputs.version }}"
