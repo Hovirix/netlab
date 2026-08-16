@@ -47,16 +47,16 @@ config forwarding
 	option dest 'wan'
 
 {{- range $rule := $fw.router_access }}
-{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{ template "rules" (dict "rule" $rule "vlans" $config.vlans) }}
 {{- end }}
 {{- range $rule := $fw.management_flows }}
-{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{ template "rules" (dict "rule" $rule "vlans" $config.vlans) }}
 {{- end }}
 {{- range $rule := $fw.data_flows }}
-{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{ template "rules" (dict "rule" $rule "vlans" $config.vlans) }}
 {{- end }}
 {{- range $rule := $fw.wan_rules }}
-{{ template "rule" (dict "rule" $rule "vlans" $config.vlans) }}
+{{ template "rules" (dict "rule" $rule "vlans" $config.vlans) }}
 {{- end }}
 {{- range $key, $vlan := $config.vlans }}
 {{ template "rule" (dict "rule" (dict "src" $key "proto" "tcp" "port" "53") "vlans" $config.vlans) }}
@@ -65,10 +65,22 @@ config forwarding
 {{ template "rule" (dict "rule" (dict "src" $key "proto" "udp" "src_port" "68" "port" "67") "vlans" $config.vlans) }}
 {{- end }}
 {{- end }}
+{{- define "rules" }}
+{{- $rule := .rule -}}
+{{- $vlans := .vlans -}}
+{{- if index $rule "srcs" }}
+{{- range $src := index $rule "srcs" }}
+{{ template "rule" (dict "rule" $rule "vlans" $vlans "src" $src) }}
+{{- end }}
+{{- else }}
+{{ template "rule" (dict "rule" $rule "vlans" $vlans) }}
+{{- end }}
+{{- end }}
 {{- define "rule" }}
 {{- $rule := .rule -}}
 {{- $vlans := .vlans -}}
-{{- $srcName := index $rule "src" -}}
+{{- $srcName := index . "src" -}}
+{{- if not $srcName }}{{ $srcName = index $rule "src" }}{{ end -}}
 {{- $src := $srcName -}}
 {{- with index $vlans $srcName }}{{ $src = printf "vlan%d" .id }}{{ end -}}
 {{- $destName := index $rule "dest" -}}

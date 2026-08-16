@@ -14,8 +14,8 @@ and are not tracked in Git.
   and IAM.
 - Keep a direct WireGuard management path for break-glass access.
 - Prevent untrusted Wi-Fi and lab systems from reaching internal infrastructure.
-- Separate admin clients, hypervisor management, storage, Kubernetes, untrusted
-  devices, and lab workloads.
+- Separate admin clients, hypervisor management, storage, compute workloads,
+  untrusted devices, and lab workloads.
 - Make firewall intent readable with stable rule names.
 
 ## VLANs
@@ -25,7 +25,7 @@ and are not tracked in Git.
 | 10 | `vlan10` | `10.10.0.1/24` | yes | yes | Admin clients and physical backup access. |
 | 20 | `vlan20` | `10.20.0.1/24` | no | yes | Mini PC and Proxmox host management. |
 | 30 | `vlan30` | `10.30.0.1/24` | yes | yes | TrueNAS and storage services. |
-| 40 | `vlan40` | `10.40.0.1/24` | yes | yes | Talos Linux and Kubernetes nodes. |
+| 40 | `vlan40` | `10.40.0.1/24` | yes | yes | Talos, Kubernetes, and Docker Swarm compute nodes. |
 | 50 | `vlan50` | `10.50.0.1/24` | yes | yes | Untrusted Wi-Fi and client devices. |
 | 60 | `vlan60` | `10.60.0.1/24` | yes | no | Security lab VMs. |
 
@@ -67,7 +67,7 @@ directly on the admin VLAN.
 | `vlan10` | `wan` | allowed | Admin client Internet. |
 | `vlan20` | `wan` | allowed | Proxmox updates. |
 | `vlan30` | `wan` | allowed | TrueNAS updates. |
-| `vlan40` | `wan` | allowed | Kubernetes image pulls and updates. |
+| `vlan40` | `wan` | allowed | Compute node image pulls and updates. |
 | `vlan50` | `wan` | allowed | Untrusted Wi-Fi Internet. |
 | `vlan60` | `wan` | blocked | Lab has no Internet by default. |
 | `vpn` | `wan` | allowed | VPN client Internet. |
@@ -97,28 +97,29 @@ rendered from SOPS-managed credentials during firmware build.
 
 ## Management Flows
 
-| Rule | Source | Destination | Port |
+Local admin clients on `vlan10` and remote WireGuard clients in `vpn` have the
+same explicit administration rights. WireGuard is still a separate untrusted zone
+by default; parity is created only by the allow rules below.
+
+| Rendered Rule Pattern | Source | Destination | Port |
 | --- | --- | --- | --- |
-| `Allow-VLAN10-to-VLAN20-Proxmox-HTTPS` | `vlan10` | `vlan20` | TCP `8006` |
-| `Allow-VLAN10-to-VLAN20-SSH` | `vlan10` | `vlan20` | TCP `22` |
-| `Allow-VLAN10-to-VLAN30-TrueNAS-HTTPS` | `vlan10` | `vlan30` | TCP `443` |
-| `Allow-VLAN10-to-VLAN30-TrueNAS-SSH` | `vlan10` | `vlan30` | TCP `22` |
-| `Allow-VLAN10-to-VLAN40-TalosAPI` | `vlan10` | `vlan40` | TCP `50000` |
-| `Allow-VLAN10-to-VLAN40-KubeAPI` | `vlan10` | `vlan40` | TCP `6443` |
-| `Allow-VPN-to-VLAN20-Proxmox-HTTPS` | `vpn` | `vlan20` | TCP `8006` |
-| `Allow-VPN-to-VLAN20-SSH` | `vpn` | `vlan20` | TCP `22` |
-| `Allow-VPN-to-VLAN30-TrueNAS-HTTPS` | `vpn` | `vlan30` | TCP `443` |
-| `Allow-VPN-to-VLAN30-TrueNAS-SSH` | `vpn` | `vlan30` | TCP `22` |
-| `Allow-VPN-to-VLAN40-TalosAPI` | `vpn` | `vlan40` | TCP `50000` |
-| `Allow-VPN-to-VLAN40-KubeAPI` | `vpn` | `vlan40` | TCP `6443` |
+| `Allow-<source>-to-vlan20-tcp-8006` | `vlan10`, `vpn` | `vlan20` | TCP `8006` |
+| `Allow-<source>-to-vlan20-tcp-22` | `vlan10`, `vpn` | `vlan20` | TCP `22` |
+| `Allow-<source>-to-vlan30-tcp-443` | `vlan10`, `vpn` | `vlan30` | TCP `443` |
+| `Allow-<source>-to-vlan30-tcp-22` | `vlan10`, `vpn` | `vlan30` | TCP `22` |
+| `Allow-<source>-to-vlan40-tcp-50000` | `vlan10`, `vpn` | `vlan40` | TCP `50000` |
+| `Allow-<source>-to-vlan40-tcp-6443` | `vlan10`, `vpn` | `vlan40` | TCP `6443` |
+| `Allow-<source>-to-vlan40-tcp-80` | `vlan10`, `vpn` | `vlan40` | TCP `80` |
+| `Allow-<source>-to-vlan40-tcp-443` | `vlan10`, `vpn` | `vlan40` | TCP `443` |
+| `Allow-<source>-to-vlan40-tcp-22` | `vlan10`, `vpn` | `vlan40` | TCP `22` |
 
 ## Data Flows
 
-| Rule | Source | Destination | Port | Purpose |
+| Rendered Rule Pattern | Source | Destination | Port | Purpose |
 | --- | --- | --- | --- | --- |
-| `Allow-VLAN10-to-VLAN30-NFSv4` | `vlan10` | `vlan30` | TCP `2049` | Admin Wi-Fi/client access to TrueNAS NFSv4 storage. |
-| `Allow-VLAN20-to-VLAN30-NFSv4` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
-| `Allow-VLAN40-to-VLAN30-NFSv4` | `vlan40` | `vlan30` | TCP `2049` | Kubernetes to TrueNAS NFSv4 storage. |
+| `Allow-<source>-to-vlan30-tcp-2049` | `vlan10`, `vpn` | `vlan30` | TCP `2049` | Local and remote admin access to TrueNAS NFSv4 storage. |
+| `Allow-vlan20-to-vlan30-tcp-2049` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
+| `Allow-vlan40-to-vlan30-tcp-2049` | `vlan40` | `vlan30` | TCP `2049` | Compute workloads to TrueNAS NFSv4 storage. |
 
 ## Wireless Placement
 
@@ -161,3 +162,5 @@ Use host controls for same-zone security:
 - TrueNAS users, shares, ACLs, and service restrictions for storage.
 - Talos certificates and Kubernetes RBAC for cluster access.
 - Kubernetes NetworkPolicy for pod-to-pod restrictions.
+- Docker host firewalls for Swarm control, gossip, and overlay traffic inside
+  `vlan40`.

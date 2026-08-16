@@ -120,17 +120,17 @@ dhcp:
     dhcpv4: server
 
   static_leases:
-    - name: prod-k8s-cp-01
-      mac: "02:40:00:00:00:01"
-      ip: 10.40.0.11
+    - name: swarm-01
+      mac: "02:40:00:00:01:01"
+      ip: 10.40.0.101
 
-    - name: prod-k8s-cp-02
-      mac: "02:40:00:00:00:02"
-      ip: 10.40.0.12
+    - name: swarm-02
+      mac: "02:40:00:00:01:02"
+      ip: 10.40.0.102
 
-    - name: prod-k8s-cp-03
-      mac: "02:40:00:00:00:03"
-      ip: 10.40.0.13
+    - name: swarm-03
+      mac: "02:40:00:00:01:03"
+      ip: 10.40.0.103
 
 firewall:
   defaults:
@@ -147,35 +147,26 @@ firewall:
       port: 51820
       reason: WireGuard listener
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       proto: tcp
       port: 443
-      reason: Router HTTPS
+      reason: Router HTTPS for local and remote administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       proto: tcp
       port: 3000
-      reason: AdGuardHome UI
+      reason: AdGuardHome UI for local and remote administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       proto: tcp
       port: 22
-      reason: Router SSH
-
-    - src: vpn
-      proto: tcp
-      port: 443
-      reason: Remote router HTTPS
-
-    - src: vpn
-      proto: tcp
-      port: 22
-      reason: Remote router SSH
-
-    - src: vpn
-      proto: tcp
-      port: 3000
-      reason: Remote AdGuardHome UI
+      reason: Router SSH for local and remote administration
 
     - src: vpn
       proto: tcp
@@ -188,84 +179,86 @@ firewall:
       reason: Remote DNS UDP
 
   management_flows:
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: proxmox
       proto: tcp
       port: 8006
-      reason: Proxmox HTTPS
+      reason: Proxmox HTTPS administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: proxmox
       proto: tcp
       port: 22
-      reason: Proxmox SSH
+      reason: Proxmox SSH administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: storage
       proto: tcp
       port: 443
-      reason: TrueNAS HTTPS
+      reason: TrueNAS HTTPS administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: storage
       proto: tcp
       port: 22
-      reason: TrueNAS SSH
+      reason: TrueNAS SSH administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: talos
       proto: tcp
       port: 50000
-      reason: Talos API
+      reason: Talos API administration
 
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: talos
       proto: tcp
       port: 6443
-      reason: Kubernetes API
+      reason: Kubernetes API administration
 
-    - src: vpn
-      dest: proxmox
+    - srcs:
+        - admin
+        - vpn
+      dest: talos
       proto: tcp
-      port: 8006
-      reason: Remote Proxmox HTTPS
+      port: 80
+      reason: Kubernetes ingress HTTP administration
 
-    - src: vpn
-      dest: proxmox
-      proto: tcp
-      port: 22
-      reason: Remote Proxmox SSH
-
-    - src: vpn
-      dest: storage
+    - srcs:
+        - admin
+        - vpn
+      dest: talos
       proto: tcp
       port: 443
-      reason: Remote TrueNAS HTTPS
+      reason: Kubernetes ingress HTTPS administration
 
-    - src: vpn
-      dest: storage
+    - srcs:
+        - admin
+        - vpn
+      dest: talos
       proto: tcp
       port: 22
-      reason: Remote TrueNAS SSH
-
-    - src: vpn
-      dest: talos
-      proto: tcp
-      port: 50000
-      reason: Remote Talos API
-
-    - src: vpn
-      dest: talos
-      proto: tcp
-      port: 6443
-      reason: Remote Kubernetes API
+      reason: Talos node SSH administration
 
   data_flows:
-    - src: admin
+    - srcs:
+        - admin
+        - vpn
       dest: storage
       proto: tcp
       port: 2049
-      reason: NFSv4
+      reason: NFSv4 storage access
 
     - src: proxmox
       dest: storage
