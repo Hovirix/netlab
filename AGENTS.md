@@ -35,17 +35,18 @@ Maintain this repo as an OpenWrt homelab router firmware configuration using a z
 
 ## Current Topology
 
-- `vlan10` admin: DHCP yes, WAN yes, physical backup/admin access on untagged `lan5`, 5 GHz admin Wi-Fi.
+- `vlan10` management: DHCP yes, WAN yes, physical backup/management access on untagged `lan5`, 5 GHz admin Wi-Fi.
 - `vlan20` Proxmox: DHCP no, WAN yes, tagged on `lan1` and `lan2`.
-- `vlan30` storage/TrueNAS: DHCP yes, WAN yes, untagged `lan3`.
-- `vlan40` Talos/Kubernetes/compute: DHCP yes, WAN yes, tagged on `lan1` and `lan2`.
-- `vlan50` untrusted clients: DHCP yes, WAN yes, 2.4 GHz Wi-Fi with client isolation, no switch ports.
-- `vlan60` security lab: DHCP yes, WAN no, tagged on `lan1` and `lan2`.
+- `vlan30` TrueNAS: DHCP yes, WAN yes, untagged `lan3`.
+- `vlan40` homelab: DHCP yes, WAN yes, tagged on `lan1` and `lan2`; prod Docker Swarm nodes (static leases `swarm-01/02/03`).
+- `vlan50` kubelab: DHCP yes, WAN yes, tagged on `lan1` and `lan2`; Kubernetes/Talos workloads.
+- `vlan60` cyberlab: DHCP yes, WAN no, tagged on `lan1` and `lan2`; security lab.
+- `vlan70` clients: DHCP yes, WAN yes, 2.4 GHz Wi-Fi with client isolation, no switch ports.
 - `lan4` is intentionally unused.
 
 ## Template Behavior To Preserve
 
-- Firewall zone names render as `vlan<ID>` even though model keys are semantic names like `admin`, `storage`, and `talos`.
+- Firewall zone names render as `vlan<ID>` even though model keys are semantic names like `management`, `truenas`, and `homelab`.
 - VLANs with `wan: true` get `vlan<ID> -> wan` forwarding; `vpn -> wan` is always rendered; lab currently has no WAN forwarding.
 - DNS router-input allow rules are rendered for every VLAN; DHCP router-input allow rules are rendered only for VLANs with `dhcp: true`.
 - `dnsmasq` has `port: 0`; AdGuard Home is the DNS listener on port `53`, with UI bound to `10.10.0.1:3000`.
@@ -55,9 +56,9 @@ Maintain this repo as an OpenWrt homelab router firmware configuration using a z
 
 - Update `docs/zero-trust-network.md` when changing firewall, VLAN, WireGuard, DNS, DHCP, router management, wireless placement, or security behavior.
 - Update `docs/operations.md` when changing build, validation, update, deployment, or operator workflows.
-- Before flashing, review generated `build/files/etc/config/*` and preserve documented access paths: `lan5` admin, router SSH/HTTPS from `vlan10`, AdGuard UI from `vlan10`, and WAN UDP `51820` for WireGuard.
+- Before flashing, review generated `build/files/etc/config/*` and preserve documented access paths: `lan5` management, router SSH/HTTPS from `vlan10`, AdGuard UI from `vlan10`, and WAN UDP `51820` for WireGuard.
 
 ## Commits And PRs
 
-- Use Conventional Commits and Semantic PR titles, for example `fix(firewall): restrict WireGuard access to admin VLAN`.
+- Use Conventional Commits and Semantic PR titles, for example `fix(firewall): restrict WireGuard access to management VLAN`.
 - Avoid `openwrt` as a scope because it is the whole repo; prefer scopes like `firewall`, `vpn`, `dns`, `wireless`, `build`, `deps`, or no scope.

@@ -14,20 +14,21 @@ and are not tracked in Git.
   and IAM.
 - Keep a direct WireGuard management path for break-glass access.
 - Prevent untrusted Wi-Fi and lab systems from reaching internal infrastructure.
-- Separate admin clients, hypervisor management, storage, compute workloads,
-  untrusted devices, and lab workloads.
+- Separate management clients, hypervisor management, storage, homelab compute,
+  Kubernetes workloads, untrusted devices, and lab workloads.
 - Make firewall intent readable with stable rule names.
 
 ## VLANs
 
 | VLAN | Zone | Gateway | DHCP | WAN | Purpose |
 | ---: | --- | --- | --- | --- | --- |
-| 10 | `vlan10` | `10.10.0.1/24` | yes | yes | Admin clients and physical backup access. |
+| 10 | `vlan10` | `10.10.0.1/24` | yes | yes | Management clients and physical backup access. |
 | 20 | `vlan20` | `10.20.0.1/24` | no | yes | Mini PC and Proxmox host management. |
 | 30 | `vlan30` | `10.30.0.1/24` | yes | yes | TrueNAS and storage services. |
-| 40 | `vlan40` | `10.40.0.1/24` | yes | yes | Talos, Kubernetes, and Docker Swarm compute nodes. |
-| 50 | `vlan50` | `10.50.0.1/24` | yes | yes | Untrusted Wi-Fi and client devices. |
+| 40 | `vlan40` | `10.40.0.1/24` | yes | yes | Prod Docker Swarm compute nodes. |
+| 50 | `vlan50` | `10.50.0.1/24` | yes | yes | Kubernetes/Talos workloads. |
 | 60 | `vlan60` | `10.60.0.1/24` | yes | no | Security lab VMs. |
+| 70 | `vlan70` | `10.70.0.1/24` | yes | yes | Untrusted Wi-Fi and client devices. |
 
 The `vpn` zone is a WireGuard interface, not a VLAN. It is separate from
 `vlan10` so remote management can be audited and restricted independently.
@@ -36,16 +37,16 @@ The `vpn` zone is a WireGuard interface, not a VLAN. It is separate from
 
 | Port | Mode | VLANs |
 | --- | --- | --- |
-| `lan1` | trunk | tagged `20`, `40`, `60` |
-| `lan2` | trunk | tagged `20`, `40`, `60` |
+| `lan1` | trunk | tagged `20`, `40`, `50`, `60` |
+| `lan2` | trunk | tagged `20`, `40`, `50`, `60` |
 | `lan3` | access | untagged `30` |
 | `lan4` | unused | none |
 | `lan5` | access | untagged `10` |
 
-`lan1` and `lan2` are tagged trunks for Proxmox, Talos, and lab networks only.
-`lan3` is the direct TrueNAS port and lands on the storage VLAN. `lan5` is the
-physical backup access port. Keep `lan5` physically trusted because it lands
-directly on the admin VLAN.
+`lan1` and `lan2` are tagged trunks for Proxmox, homelab, kubelab, and cyberlab
+networks only. `lan3` is the direct TrueNAS port and lands on the storage VLAN.
+`lan5` is the physical backup access port. Keep `lan5` physically trusted because
+it lands directly on the management VLAN.
 
 ## Zone Policy
 
@@ -58,18 +59,20 @@ directly on the admin VLAN.
 | `vlan40` | `DROP` | `ACCEPT` | `REJECT` | no |
 | `vlan50` | `DROP` | `ACCEPT` | `REJECT` | no |
 | `vlan60` | `DROP` | `ACCEPT` | `REJECT` | no |
+| `vlan70` | `DROP` | `ACCEPT` | `REJECT` | no |
 | `vpn` | `DROP` | `ACCEPT` | `REJECT` | no |
 
 ## WAN Forwarding
 
 | Source | Destination | Status | Reason |
 | --- | --- | --- | --- |
-| `vlan10` | `wan` | allowed | Admin client Internet. |
+| `vlan10` | `wan` | allowed | Management client Internet. |
 | `vlan20` | `wan` | allowed | Proxmox updates. |
 | `vlan30` | `wan` | allowed | TrueNAS updates. |
-| `vlan40` | `wan` | allowed | Compute node image pulls and updates. |
-| `vlan50` | `wan` | allowed | Untrusted Wi-Fi Internet. |
+| `vlan40` | `wan` | allowed | Homelab image pulls and updates. |
+| `vlan50` | `wan` | allowed | Kubernetes image pulls and updates. |
 | `vlan60` | `wan` | blocked | Lab has no Internet by default. |
+| `vlan70` | `wan` | allowed | Untrusted Wi-Fi Internet. |
 | `vpn` | `wan` | allowed | VPN client Internet. |
 
 ## Router Access
@@ -86,20 +89,21 @@ services.
 | `vlan40` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vlan50` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vlan60` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
+| `vlan70` | DNS TCP/UDP `53`, DHCP UDP `68 -> 67`. |
 | `vpn` | HTTPS `443`, SSH `22`, AdGuard Home UI TCP `3000`, DNS TCP/UDP `53`. |
 
 DNS is served by AdGuard Home on the router. `dnsmasq` has `option port '0'`, so
 it provides DHCP only and does not listen on port `53`.
 
-AdGuard Home's web UI is bound to the admin gateway `10.10.0.1:3000` and is
+AdGuard Home's web UI is bound to the management gateway `10.10.0.1:3000` and is
 only allowed by firewall policy from `vlan10` and `vpn`. UI authentication is
 rendered from SOPS-managed credentials during firmware build.
 
 ## Management Flows
 
-Local admin clients on `vlan10` and remote WireGuard clients in `vpn` have the
-same explicit administration rights. WireGuard is still a separate untrusted zone
-by default; parity is created only by the allow rules below.
+Local management clients on `vlan10` and remote WireGuard clients in `vpn` have
+the same explicit administration rights. WireGuard is still a separate untrusted
+zone by default; parity is created only by the allow rules below.
 
 | Rendered Rule Pattern | Source | Destination | Port |
 | --- | --- | --- | --- |
@@ -107,11 +111,12 @@ by default; parity is created only by the allow rules below.
 | `Allow-<source>-to-vlan20-tcp-22` | `vlan10`, `vpn` | `vlan20` | TCP `22` |
 | `Allow-<source>-to-vlan30-tcp-443` | `vlan10`, `vpn` | `vlan30` | TCP `443` |
 | `Allow-<source>-to-vlan30-tcp-22` | `vlan10`, `vpn` | `vlan30` | TCP `22` |
-| `Allow-<source>-to-vlan40-tcp-50000` | `vlan10`, `vpn` | `vlan40` | TCP `50000` |
-| `Allow-<source>-to-vlan40-tcp-6443` | `vlan10`, `vpn` | `vlan40` | TCP `6443` |
-| `Allow-<source>-to-vlan40-tcp-80` | `vlan10`, `vpn` | `vlan40` | TCP `80` |
-| `Allow-<source>-to-vlan40-tcp-443` | `vlan10`, `vpn` | `vlan40` | TCP `443` |
 | `Allow-<source>-to-vlan40-tcp-22` | `vlan10`, `vpn` | `vlan40` | TCP `22` |
+| `Allow-<source>-to-vlan50-tcp-50000` | `vlan10`, `vpn` | `vlan50` | TCP `50000` |
+| `Allow-<source>-to-vlan50-tcp-6443` | `vlan10`, `vpn` | `vlan50` | TCP `6443` |
+| `Allow-<source>-to-vlan50-tcp-80` | `vlan10`, `vpn` | `vlan50` | TCP `80` |
+| `Allow-<source>-to-vlan50-tcp-443` | `vlan10`, `vpn` | `vlan50` | TCP `443` |
+| `Allow-<source>-to-vlan50-tcp-22` | `vlan10`, `vpn` | `vlan50` | TCP `22` |
 
 ## Data Flows
 
@@ -119,17 +124,18 @@ by default; parity is created only by the allow rules below.
 | --- | --- | --- | --- | --- |
 | `Allow-<source>-to-vlan30-tcp-2049` | `vlan10`, `vpn` | `vlan30` | TCP `2049` | Local and remote admin access to TrueNAS NFSv4 storage. |
 | `Allow-vlan20-to-vlan30-tcp-2049` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
-| `Allow-vlan40-to-vlan30-tcp-2049` | `vlan40` | `vlan30` | TCP `2049` | Compute workloads to TrueNAS NFSv4 storage. |
+| `Allow-vlan40-to-vlan30-tcp-2049` | `vlan40` | `vlan30` | TCP `2049` | Docker Swarm workloads to TrueNAS NFSv4 storage. |
+| `Allow-vlan50-to-vlan30-tcp-2049` | `vlan50` | `vlan30` | TCP `2049` | Kubernetes workloads to TrueNAS NFSv4 storage. |
 
 ## Wireless Placement
 
 | Radio | Network | Purpose |
 | --- | --- | --- |
-| 2.4 GHz | `vlan50` | Untrusted Wi-Fi. |
-| 5 GHz | `vlan10` | Admin Wi-Fi. |
+| 2.4 GHz | `vlan70` | Untrusted Wi-Fi. |
+| 5 GHz | `vlan10` | Management Wi-Fi. |
 
 The 2.4 GHz SSID uses client isolation. The 5 GHz SSID is privileged because it
-lands on the admin VLAN.
+lands on the management VLAN.
 
 ## Rule Naming
 
@@ -160,7 +166,7 @@ Use host controls for same-zone security:
 
 - Proxmox firewall and MFA for hypervisor management.
 - TrueNAS users, shares, ACLs, and service restrictions for storage.
-- Talos certificates and Kubernetes RBAC for cluster access.
-- Kubernetes NetworkPolicy for pod-to-pod restrictions.
+- Kubernetes certificates and Kubernetes RBAC for cluster access in `vlan50`.
 - Docker host firewalls for Swarm control, gossip, and overlay traffic inside
   `vlan40`.
+- Kubernetes NetworkPolicy for pod-to-pod restrictions in `vlan50`.
