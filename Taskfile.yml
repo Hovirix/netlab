@@ -3,13 +3,14 @@ version: '3'
 tasks:
   build:
     desc: Validate, render, and build firmware
+    deps: [validate, render]
     cmds:
-      - task: validate
       - ./scripts/build.sh
 
   deploy:
     desc: Deploy firmware to the router
     prompt: Flash router with sysupgrade -n?
+    deps: [build]
     cmds:
       - ./scripts/deploy.sh
 
@@ -31,6 +32,5 @@ tasks:
       - ./scripts/validate.sh
 
   clean:
-    internal: true
     cmds:
       - rm -rf build
