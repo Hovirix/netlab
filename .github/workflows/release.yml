@@ -10,12 +10,28 @@ permissions:
   pull-requests: write
 
 jobs:
+  nix:
+    name: Nix flake check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+
+      - name: Run checks
+        run: nix flake check --print-build-logs
+
   release:
     name: Release Please
+    needs: nix
     runs-on: ubuntu-latest
     steps:
       - name: Create release
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@8b8fd2cc23b2e18957157a9d923d75aa0c6f6ad5 # v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

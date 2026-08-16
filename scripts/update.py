@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.request import urlretrieve, urlopen
+from urllib.request import urlopen
+import hashlib
 import re
+import shutil
 import subprocess
+import tempfile
+import time
 
 
 CONFIG_FILE = Path("config/router.yaml")
 DOWNLOADS_DIR = Path("build/downloads")
+SIGNING_KEY = Path("keys/openwrt-build-system.asc")
 HOST_SUFFIX = "Linux-x86_64"
+DOWNLOAD_TIMEOUT_SECONDS = 60
+DOWNLOAD_ATTEMPTS = 3
 
 
 class LinkParser(HTMLParser):
@@ -40,7 +47,9 @@ def build_config():
 
 def latest_openwrt_version():
     parser = LinkParser()
-    with urlopen("https://downloads.openwrt.org/releases/", timeout=60) as response:
+    with urlopen(
+        "https://downloads.openwrt.org/releases/", timeout=DOWNLOAD_TIMEOUT_SECONDS
+    ) as response:
         parser.feed(response.read().decode("utf-8", errors="replace"))
 
     versions = []
@@ -52,6 +61,63 @@ def latest_openwrt_version():
         raise SystemExit("no OpenWrt release versions found")
 
     return ".".join(str(part) for part in max(versions))
+
+
+def download(url, path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    last_error = None
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            with urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
+                with path.open("wb") as output:
+                    shutil.copyfileobj(response, output)
+            return
+        except OSError as error:
+            last_error = error
+            path.unlink(missing_ok=True)
+            if attempt < DOWNLOAD_ATTEMPTS:
+                time.sleep(attempt)
+    raise SystemExit(f"failed to download {url}: {last_error}")
+
+
+def verify_signed_checksums(base_url, archive, checksums_path, signature_path):
+    if not SIGNING_KEY.is_file():
+        raise SystemExit(f"missing pinned OpenWrt signing key: {SIGNING_KEY}")
+
+    download(f"{base_url}/sha256sums", checksums_path)
+    download(f"{base_url}/sha256sums.asc", signature_path)
+
+    with tempfile.TemporaryDirectory() as gpg_home:
+        subprocess.run(
+            ["gpg", "--batch", "--homedir", gpg_home, "--import", str(SIGNING_KEY)],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "gpgv",
+                "--homedir",
+                gpg_home,
+                "--keyring",
+                f"{gpg_home}/pubring.kbx",
+                str(signature_path),
+                str(checksums_path),
+            ],
+            check=True,
+        )
+
+    for line in checksums_path.read_text().splitlines():
+        checksum, separator, filename = line.partition(" *")
+        if separator and filename == archive and re.fullmatch(r"[0-9a-f]{64}", checksum):
+            return checksum
+    raise SystemExit(f"signed sha256sums does not contain {archive}")
+
+
+def verify_archive_checksum(archive_path, expected_checksum):
+    with archive_path.open("rb") as archive_file:
+        digest = hashlib.file_digest(archive_file, "sha256").hexdigest()
+    if digest != expected_checksum:
+        archive_path.unlink(missing_ok=True)
+        raise SystemExit(f"checksum mismatch for {archive_path.name}")
 
 
 def update_build_metadata(version, imagebuilder_hash):
@@ -90,6 +156,8 @@ def main():
     )
     archive_url = f"{base_url}/{archive}"
     archive_path = DOWNLOADS_DIR / archive
+    checksums_path = DOWNLOADS_DIR / f"{archive}.sha256sums"
+    signature_path = DOWNLOADS_DIR / f"{archive}.sha256sums.asc"
 
     DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -97,7 +165,11 @@ def main():
     print(f"Latest OpenWrt:  {latest_version}")
     print(f"ImageBuilder:    {archive_url}")
 
-    urlretrieve(archive_url, archive_path)
+    expected_checksum = verify_signed_checksums(
+        base_url, archive, checksums_path, signature_path
+    )
+    download(archive_url, archive_path)
+    verify_archive_checksum(archive_path, expected_checksum)
     imagebuilder_hash = subprocess.check_output(
         ["nix", "hash", "file", str(archive_path)], text=True
     ).strip()
