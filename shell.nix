@@ -12,6 +12,7 @@ pkgs.mkShell {
     python3
     sops
     uci
+    yq-go
     zstd
   ];
 }

@@ -9,6 +9,7 @@
       enable = true;
       indent_size = 2;
     };
+    ruff.enable = true;
     statix.enable = true;
     taplo.enable = true;
     typos = {

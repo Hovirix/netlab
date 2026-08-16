@@ -42,5 +42,3 @@ for output in "${outputs[@]}"; do
   gomplate "${gomplate_args[@]}" --file "templates/${output%%:*}" --out "${output#*:}"
 done
 chmod +x "$uci_defaults_dir/99-service"
-
-printf 'Rendered OpenWrt overlay: %s\n' "$stage_dir"

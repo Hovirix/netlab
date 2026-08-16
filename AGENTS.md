@@ -12,12 +12,9 @@ Maintain this repo as an OpenWrt homelab router firmware configuration using a z
 ## Commands
 
 - Enter the tool shell first when dependencies may be missing: `nix develop`.
-- `task validate` decrypts SOPS secrets, renders `build/files/`, and runs UCI validation for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`.
-- `task render` only renders the real SOPS-backed overlay into `build/files/`.
-- `task build` validates and renders, then builds firmware with ImageBuilder; firmware lands in `build/artifacts/`.
+- `task build` runs the internal `render` and `validate` steps (decrypting SOPS secrets, rendering `build/files/`, and running UCI validation for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`), then builds firmware with ImageBuilder; firmware lands in `build/artifacts/`.
 - `task update` updates only `build.openwrt_version` and `build.imagebuilder_hash` in `config/router.yaml`; it does not decrypt secrets.
 - `task deploy` requires `task build` first, uploads the matching sysupgrade image with `scp -O`, then runs `sysupgrade -n` and resets router config.
-- `task clean` removes all ignored build state under `build/`.
 - `nix flake check --print-build-logs` is the CI check; `nix fmt` is the pre-commit formatter.
 
 ## Build And CI Constraints

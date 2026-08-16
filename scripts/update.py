@@ -23,24 +23,16 @@ class LinkParser(HTMLParser):
         self.links.append(href.rstrip("/"))
 
 
-def build_config(lines):
-    values = {}
-    in_build = False
-
-    for line in lines:
-        stripped = line.strip()
-        if line.startswith("build:"):
-            in_build = True
-            continue
-        if in_build and line and not line.startswith(" ") and stripped:
-            break
-        if not in_build or ":" not in stripped:
-            continue
-        key, value = stripped.split(":", 1)
-        values[key] = value.strip().strip('"')
+def build_config():
+    values = {
+        key: subprocess.check_output(
+            ["yq", "-r", f".build.{key}", str(CONFIG_FILE)], text=True
+        ).strip()
+        for key in ("openwrt_version", "target", "subtarget")
+    }
 
     for key in ("openwrt_version", "target", "subtarget"):
-        if not values.get(key):
+        if values.get(key) in ("", "null"):
             raise SystemExit(f"missing build.{key} in config/router.yaml")
 
     return values
@@ -62,36 +54,24 @@ def latest_openwrt_version():
     return ".".join(str(part) for part in max(versions))
 
 
-def update_build_metadata(lines, version, imagebuilder_hash):
-    in_build = False
-    updated_version = False
-    updated_hash = False
+def update_build_metadata(version, imagebuilder_hash):
+    text = CONFIG_FILE.read_text()
 
-    for index, line in enumerate(lines):
-        stripped = line.strip()
-        if line.startswith("build:"):
-            in_build = True
-            continue
-        if in_build and line and not line.startswith(" ") and stripped:
-            in_build = False
-        if not in_build:
-            continue
+    def replace(key, value):
+        new_text, count = re.subn(
+            rf"^  {key}: .*$", rf"  {key}: {value}", text, count=1, flags=re.M
+        )
+        if count != 1:
+            raise SystemExit(f"missing build.{key} in config/router.yaml")
+        return new_text
 
-        newline = "\n" if line.endswith("\n") else ""
-        if stripped.startswith("openwrt_version:"):
-            lines[index] = f"  openwrt_version: {version}{newline}"
-            updated_version = True
-        elif stripped.startswith("imagebuilder_hash:"):
-            lines[index] = f"  imagebuilder_hash: {imagebuilder_hash}{newline}"
-            updated_hash = True
-
-    if not updated_version or not updated_hash:
-        raise SystemExit("failed to update OpenWrt metadata in config/router.yaml")
+    text = replace("openwrt_version", version)
+    text = replace("imagebuilder_hash", imagebuilder_hash)
+    CONFIG_FILE.write_text(text)
 
 
 def main():
-    lines = CONFIG_FILE.read_text(encoding="utf-8").splitlines(keepends=True)
-    config = build_config(lines)
+    config = build_config()
     current_version = config["openwrt_version"]
     latest_version = latest_openwrt_version()
 
@@ -122,8 +102,7 @@ def main():
         ["nix", "hash", "file", str(archive_path)], text=True
     ).strip()
 
-    update_build_metadata(lines, latest_version, imagebuilder_hash)
-    CONFIG_FILE.write_text("".join(lines), encoding="utf-8")
+    update_build_metadata(latest_version, imagebuilder_hash)
 
     print(
         "Updated config/router.yaml to OpenWrt "

@@ -34,13 +34,7 @@ remote_path="/tmp/$artifact_name"
 printf 'Target router: %s@%s:%s\n' "$router_user" "$router_host" "$router_port"
 printf 'Artifact: %s\n' "$artifact_path"
 printf 'Remote path: %s\n\n' "$remote_path"
-printf 'WARNING: sysupgrade -n will flash the image, reset config, and reboot the router.\n\n'
-
-read -r -p 'Continue with upload and sysupgrade? [y/N] ' confirm
-if [[ $confirm != [yY] ]]; then
-  printf 'Aborted.\n'
-  exit 1
-fi
+printf 'WARNING: sysupgrade -n will flash the image, reset config, and reboot the router.\n'
 
 printf 'Uploading firmware with scp -O\n'
 scp -O -P "$router_port" "$artifact_path" "$router_user@$router_host:$remote_path"
