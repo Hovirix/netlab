@@ -107,3 +107,10 @@ When adding an allow rule:
 1. Avoid broad `any -> any`, `vpn -> lan`, `guest -> lan`, or `iot -> lan` rules.
 1. Run `just validate`.
 1. Review the generated firewall rule in `build/files/etc/config/firewall`.
+
+When adding a DHCP reservation:
+
+1. Add the host under `dhcp.static_leases` in `config/router.yaml` with `name`, `vlan`, `mac`, and `ip`.
+1. Keep the reserved IP inside the VLAN subnet and outside the dynamic DHCP pool.
+1. Run `just validate`.
+1. Review the generated host entry in `build/files/etc/config/dhcp`.
