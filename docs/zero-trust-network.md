@@ -118,8 +118,8 @@ by default; parity is created only by the allow rules below.
 | Rendered Rule Pattern | Source | Destination | Port | Purpose |
 | --- | --- | --- | --- | --- |
 | `Allow-<source>-to-vlan30-tcp-2049` | `vlan10`, `vpn` | `vlan30` | TCP `2049` | Local and remote admin access to TrueNAS NFSv4 storage. |
-| `Allow-VLAN20-to-VLAN30-NFSv4` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
-| `Allow-VLAN40-to-VLAN30-NFSv4` | `vlan40` | `vlan30` | TCP `2049` | Compute workloads to TrueNAS NFSv4 storage. |
+| `Allow-vlan20-to-vlan30-tcp-2049` | `vlan20` | `vlan30` | TCP `2049` | Proxmox to TrueNAS NFSv4 storage. |
+| `Allow-vlan40-to-vlan30-tcp-2049` | `vlan40` | `vlan30` | TCP `2049` | Compute workloads to TrueNAS NFSv4 storage. |
 
 ## Wireless Placement
 
