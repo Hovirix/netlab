@@ -20,3 +20,11 @@ config dhcp 'vlan{{ $vlan.id }}'
 
 {{- end }}
 {{- end }}
+
+{{- range $lease := $config.dhcp.static_leases }}
+config host
+	option name '{{ $lease.name }}'
+	option mac '{{ $lease.mac }}'
+	option ip '{{ $lease.ip }}'
+
+{{- end }}
