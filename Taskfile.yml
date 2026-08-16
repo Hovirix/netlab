@@ -19,6 +19,11 @@ tasks:
     cmds:
       - python3 ./scripts/update.py
 
+  check:
+    desc: Run non-secret static checks
+    cmds:
+      - actionlint .github/workflows/*.yml
+
   render:
     internal: true
     run: once

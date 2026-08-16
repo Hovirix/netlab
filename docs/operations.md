@@ -23,16 +23,22 @@ firmware, or deploy to the router.
 
 | Automation | Scope | Secrets Required |
 | --- | --- | --- |
-| `check.yml` | Runs `nix flake check` for formatting and Nix evaluation. | no |
+| `check.yml` | Runs `nix flake check` for formatting, Nix evaluation, and workflow linting. | no |
 | Renovate | Opens PRs for `flake.lock` input updates and GitHub Actions versions. | no |
 | `update-openwrt.yml` | Opens PRs for `build.openwrt_version` and `build.imagebuilder_hash`. | no |
 | `release.yml` | Publishes semver tags and changelog-only GitHub Releases on merges to `main`. | no |
 
 ## Releases
 
-`release.yml` tags stable config states as `vX.Y.Z` and generates changelogs
-from Conventional Commits; the version starts at `v1.0.0` and is tracked in
-`version.txt` plus `.release-please-manifest.json`.
+`release.yml` runs `nix flake check` before Release Please tags stable config
+states as `vX.Y.Z` and generates changelogs from Conventional Commits. Release
+Please tracks the current version in `.release-please-manifest.json`; there is
+no `version.txt`.
+
+Configure GitHub repository settings to require `Check / Nix flake check` on
+`main`, prevent administrators from bypassing the rule, protect `v*` tags, and
+allow only trusted GitHub Actions. These controls protect direct pushes and
+cannot be enforced by workflow files.
 
 A release tag marks a reproducible build point: checkout the tag and build the
 firmware exactly as released.
@@ -47,6 +53,10 @@ Releases contain a tag and changelog only. Never upload firmware images or
 decrypted secrets to GitHub Releases.
 
 OpenWrt update PRs only update public release metadata in `config/router.yaml`.
+The updater verifies the target-level signed `sha256sums` manifest with the
+vendored OpenWrt Build System public key before it downloads and pins the
+ImageBuilder archive hash. The update workflow runs non-secret checks before
+it opens a PR; PRs created with `GITHUB_TOKEN` do not trigger `check.yml`.
 Review and validate them locally before merge or deployment:
 
 ```bash

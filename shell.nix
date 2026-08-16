@@ -3,6 +3,8 @@
 pkgs.mkShell {
   packages = with pkgs; [
     curl
+    actionlint
+    gnupg
     gomplate
     gnumake
     gnutar
