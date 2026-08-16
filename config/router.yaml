@@ -111,7 +111,6 @@ dhcp:
   dnsmasq:
     name: main
     port: 0
-    authoritative: true
 
   pools:
     start: 100
@@ -137,9 +136,6 @@ firewall:
     input: REJECT
     output: ACCEPT
     forward: REJECT
-    synflood_protect: true
-    flow_offloading: true
-    flow_offloading_hw: true
 
   router_access:
     - src: wan
