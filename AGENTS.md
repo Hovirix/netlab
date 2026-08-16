@@ -22,7 +22,7 @@ Maintain this repo as an OpenWrt homelab router firmware configuration using a z
 
 ## Build And CI Constraints
 
-- Nix provides the dev shell and formatter only; firmware build logic lives in `Taskfile.yml` and `scripts/*.sh`.
+- Nix provides the dev shell and formatter only; firmware build logic lives in `Taskfile.yml` and `scripts/`.
 - `build/` can contain decrypted secrets, rendered OpenWrt files, downloaded ImageBuilder archives, unpacked builders, and firmware artifacts; it is ignored and should not be committed.
 - GitHub Actions are intentionally non-secret: CI runs only `nix flake check`; it must not decrypt SOPS secrets, render real runtime config, build firmware, or deploy.
 - OpenWrt update automation opens `chore/build` PRs for public release metadata only; validate and build locally before deployment.

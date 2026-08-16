@@ -7,16 +7,17 @@ tasks:
   validate:
     desc: Decrypt secrets, render the overlay, and run UCI validation
     cmds:
+      - task: render
       - ./scripts/validate.sh
   render:
     desc: Decrypt secrets and render the OpenWrt overlay into build/files
+    run: once
     cmds:
       - ./scripts/render.sh
   build:
     desc: Validate, render, and build firmware with ImageBuilder
     cmds:
-      - ./scripts/validate.sh
-      - ./scripts/render.sh
+      - task: validate
       - ./scripts/build.sh
   update:
     desc: Update the OpenWrt release and pinned ImageBuilder hash

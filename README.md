@@ -58,7 +58,7 @@ task clean
 config/router.yaml          non-secret source model
 config/secrets.sops.yaml    encrypted runtime secrets
 templates/                  one template per rendered OpenWrt file
-scripts/                    thin render/validate/build glue
+scripts/                    thin task scripts and update helper
 build/                      ignored generated output
 ```
 

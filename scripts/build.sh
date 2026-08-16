@@ -1,27 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ -n "${NETLAB_ROOT:-}" ]; then
-  repo_root="$NETLAB_ROOT"
-else
-  repo_root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD")"
-fi
-cd "$repo_root"
-build_dir="${BUILD_DIR:-$repo_root/build}"
-downloads_dir="$build_dir/downloads"
-imagebuilder_dir="$build_dir/imagebuilder"
-artifacts_dir="$build_dir/artifacts"
+downloads_dir="build/downloads"
+imagebuilder_dir="build/imagebuilder"
+artifacts_dir="build/artifacts"
 host_suffix="Linux-x86_64"
+config_datasource="config=file://$PWD/config/router.yaml"
 
-"$repo_root/scripts/render.sh"
-
-openwrt_version="$(gomplate --datasource config=file://$repo_root/config/router.yaml --in '{{ (ds "config").build.openwrt_version }}')"
-target="$(gomplate --datasource config=file://$repo_root/config/router.yaml --in '{{ (ds "config").build.target }}')"
-subtarget="$(gomplate --datasource config=file://$repo_root/config/router.yaml --in '{{ (ds "config").build.subtarget }}')"
-profile="$(gomplate --datasource config=file://$repo_root/config/router.yaml --in '{{ (ds "config").build.profile }}')"
-packages="$(gomplate --datasource config=file://$repo_root/config/router.yaml --in '{{ range $pkg := (ds "config").build.packages }}{{ $pkg }} {{ end }}')"
+openwrt_version="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.openwrt_version }}')"
+target="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.target }}')"
+subtarget="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.subtarget }}')"
+profile="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.profile }}')"
+packages="$(gomplate --datasource "$config_datasource" --in '{{ range $pkg := (ds "config").build.packages }}{{ $pkg }} {{ end }}')"
 packages="${packages% }"
-expected_hash="$(gomplate --datasource config=file://$repo_root/config/router.yaml --in '{{ (ds "config").build.imagebuilder_hash }}')"
+expected_hash="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.imagebuilder_hash }}')"
 imagebuilder="openwrt-imagebuilder-$openwrt_version-$target-$subtarget.$host_suffix"
 archive="$imagebuilder.tar.zst"
 base_url="https://downloads.openwrt.org/releases/$openwrt_version/targets/$target/$subtarget"
@@ -42,12 +34,12 @@ fi
 rm -rf "$imagebuilder_dir"
 mkdir -p "$imagebuilder_dir"
 tar --zstd -xf "$archive_path" --strip-components=1 -C "$imagebuilder_dir"
-rm -rf "$artifacts_dir"/*
+rm -rf "${artifacts_dir:?}"/*
 
 make -C "$imagebuilder_dir" image \
   PROFILE="$profile" \
   PACKAGES="$packages" \
-  FILES="$build_dir/files" \
+  FILES="build/files" \
   BIN_DIR="$artifacts_dir"
 
 printf 'Build complete. Artifacts in: %s\n' "$artifacts_dir"
