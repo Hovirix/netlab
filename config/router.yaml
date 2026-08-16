@@ -18,7 +18,7 @@ build:
     port: 22
 
 vlans:
-  admin:
+  management:
     id: 10
     gateway: 10.10.0.1
     cidr: 10.10.0.1/24
@@ -32,33 +32,40 @@ vlans:
     dhcp: false
     wan: true
 
-  storage:
+  truenas:
     id: 30
     gateway: 10.30.0.1
     cidr: 10.30.0.1/24
     dhcp: true
     wan: true
 
-  talos:
+  homelab:
     id: 40
     gateway: 10.40.0.1
     cidr: 10.40.0.1/24
     dhcp: true
     wan: true
 
-  clients:
+  kubelab:
     id: 50
     gateway: 10.50.0.1
     cidr: 10.50.0.1/24
     dhcp: true
     wan: true
 
-  lab:
+  cyberlab:
     id: 60
     gateway: 10.60.0.1
     cidr: 10.60.0.1/24
     dhcp: true
     wan: false
+
+  clients:
+    id: 70
+    gateway: 10.70.0.1
+    cidr: 10.70.0.1/24
+    dhcp: true
+    wan: true
 
 switch:
   bridge: br-lan
@@ -71,25 +78,29 @@ switch:
     - lan5
 
   vlans:
-    admin:
+    management:
       - lan5:u*
 
     proxmox:
       - lan1:t
       - lan2:t
 
-    storage:
+    truenas:
       - lan3:u*
 
-    talos:
+    homelab:
+      - lan1:t
+      - lan2:t
+
+    kubelab:
+      - lan1:t
+      - lan2:t
+
+    cyberlab:
       - lan1:t
       - lan2:t
 
     clients: []
-
-    lab:
-      - lan1:t
-      - lan2:t
 
 network:
   wan:
@@ -144,21 +155,21 @@ firewall:
       reason: WireGuard listener
 
     - srcs:
-        - admin
+        - management
         - vpn
       proto: tcp
       port: 443
       reason: Router HTTPS for local and remote administration
 
     - srcs:
-        - admin
+        - management
         - vpn
       proto: tcp
       port: 3000
       reason: AdGuardHome UI for local and remote administration
 
     - srcs:
-        - admin
+        - management
         - vpn
       proto: tcp
       port: 22
@@ -176,7 +187,7 @@ firewall:
 
   management_flows:
     - srcs:
-        - admin
+        - management
         - vpn
       dest: proxmox
       proto: tcp
@@ -184,7 +195,7 @@ firewall:
       reason: Proxmox HTTPS administration
 
     - srcs:
-        - admin
+        - management
         - vpn
       dest: proxmox
       proto: tcp
@@ -192,81 +203,95 @@ firewall:
       reason: Proxmox SSH administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: storage
+      dest: truenas
       proto: tcp
       port: 443
       reason: TrueNAS HTTPS administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: storage
+      dest: truenas
       proto: tcp
       port: 22
       reason: TrueNAS SSH administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: talos
+      dest: kubelab
       proto: tcp
       port: 50000
       reason: Talos API administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: talos
+      dest: kubelab
       proto: tcp
       port: 6443
       reason: Kubernetes API administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: talos
+      dest: kubelab
       proto: tcp
       port: 80
       reason: Kubernetes ingress HTTP administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: talos
+      dest: kubelab
       proto: tcp
       port: 443
       reason: Kubernetes ingress HTTPS administration
 
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: talos
+      dest: kubelab
       proto: tcp
       port: 22
-      reason: Talos node SSH administration
+      reason: Kubernetes node SSH administration
+
+    - srcs:
+        - management
+        - vpn
+      dest: homelab
+      proto: tcp
+      port: 22
+      reason: Docker Swarm node SSH administration
 
   data_flows:
     - srcs:
-        - admin
+        - management
         - vpn
-      dest: storage
+      dest: truenas
       proto: tcp
       port: 2049
       reason: NFSv4 storage access
 
     - src: proxmox
-      dest: storage
+      dest: truenas
       proto: tcp
       port: 2049
       reason: NFSv4
 
-    - src: talos
-      dest: storage
+    - src: kubelab
+      dest: truenas
       proto: tcp
       port: 2049
       reason: NFSv4
+
+    - src: homelab
+      dest: truenas
+      proto: tcp
+      port: 2049
+      reason: Docker Swarm NFSv4 storage
 
   wan_rules:
     - src: wan
@@ -333,7 +358,7 @@ wireless:
       device: radio1
       suffix: "5"
       secret_key: 5g
-      network: admin
+      network: management
       isolate: false
 
 adguardhome:
