@@ -1,0 +1,32 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+  validate:
+    desc: Decrypt secrets, render the overlay, and run UCI validation
+    cmds:
+      - ./scripts/validate.sh
+  render:
+    desc: Decrypt secrets and render the OpenWrt overlay into build/files
+    cmds:
+      - ./scripts/render.sh
+  build:
+    desc: Validate, render, and build firmware with ImageBuilder
+    cmds:
+      - ./scripts/validate.sh
+      - ./scripts/render.sh
+      - ./scripts/build.sh
+  update:
+    desc: Update the OpenWrt release and pinned ImageBuilder hash
+    cmds:
+      - ./scripts/update.sh
+  deploy:
+    desc: Deploy the built sysupgrade image to the router
+    cmds:
+      - ./scripts/deploy.sh
+  clean:
+    desc: Remove generated build state
+    cmds:
+      - rm -rf build

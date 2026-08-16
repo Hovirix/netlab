@@ -8,12 +8,12 @@ This repo uses Gomplate templates to render final OpenWrt config files into
 | Command | Purpose |
 | --- | --- |
 | `nix develop` | Enter the reproducible tool shell. |
-| `just validate` | Decrypt SOPS secrets and validate generated UCI. |
-| `just render` | Decrypt SOPS secrets and render `build/files`. |
-| `just build` | Render real config and build firmware with ImageBuilder. |
-| `just update` | Update the OpenWrt release and pinned ImageBuilder hash without decrypting secrets. |
-| `just deploy` | Upload the built sysupgrade image with `scp -O` and run `sysupgrade -n`. |
-| `just clean` | Remove `build/`. |
+| `task validate` | Decrypt SOPS secrets and validate generated UCI. |
+| `task render` | Decrypt SOPS secrets and render `build/files`. |
+| `task build` | Render real config and build firmware with ImageBuilder. |
+| `task update` | Update the OpenWrt release and pinned ImageBuilder hash without decrypting secrets. |
+| `task deploy` | Upload the built sysupgrade image with `scp -O` and run `sysupgrade -n`. |
+| `task clean` | Remove `build/`. |
 
 ## CI And Updates
 
@@ -31,8 +31,8 @@ OpenWrt update PRs only update public release metadata in `config/router.yaml`.
 Review and validate them locally before merge or deployment:
 
 ```bash
-just validate
-just build
+task validate
+task build
 ```
 
 ## Generated Files
@@ -73,9 +73,9 @@ these access paths remain present:
 | AdGuard Home UI | `vlan10 -> router` TCP `3000` works. |
 | WireGuard | WAN UDP `51820` reaches the router. |
 
-`just deploy` reads the target from `config/router.yaml`, uploads the matching
+`task deploy` reads the target from `config/router.yaml`, uploads the matching
 sysupgrade artifact from `build/artifacts` to `/tmp` with `scp -O`, then runs
-`sysupgrade -n` over SSH. Build first with `just build`.
+`sysupgrade -n` over SSH. Build first with `task build`.
 
 After deploying to the router, validate firewall syntax before restarting it:
 
@@ -98,19 +98,19 @@ When adding a VLAN:
 1. Add DHCP behavior through the VLAN `dhcp` flag.
 1. Confirm `templates/firewall.tmpl` derives a separate zone.
 1. Add only explicit forwarding/rules required by the zero-trust model.
-1. Run `just validate`.
+1. Run `task validate`.
 1. Review generated `build/files/etc/config/*`.
 
 When adding an allow rule:
 
 1. Add source, destination, protocol, port, and reason in `config/router.yaml`.
 1. Avoid broad `any -> any`, `vpn -> lan`, `guest -> lan`, or `iot -> lan` rules.
-1. Run `just validate`.
+1. Run `task validate`.
 1. Review the generated firewall rule in `build/files/etc/config/firewall`.
 
 When adding a DHCP reservation:
 
 1. Add the host under `dhcp.static_leases` in `config/router.yaml` with `name`, `vlan`, `mac`, and `ip`.
 1. Keep the reserved IP inside the VLAN subnet and outside the dynamic DHCP pool.
-1. Run `just validate`.
+1. Run `task validate`.
 1. Review the generated host entry in `build/files/etc/config/dhcp`.

@@ -12,17 +12,17 @@ Maintain this repo as an OpenWrt homelab router firmware configuration using a z
 ## Commands
 
 - Enter the tool shell first when dependencies may be missing: `nix develop`.
-- `just validate` decrypts SOPS secrets, renders `build/files/`, and runs UCI validation for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`.
-- `just render` only renders the real SOPS-backed overlay into `build/files/`.
-- `just build` runs `validate`, then `render`, then ImageBuilder; firmware lands in `build/artifacts/`.
-- `just update` updates only `build.openwrt_version` and `build.imagebuilder_hash` in `config/router.yaml`; it does not decrypt secrets.
-- `just deploy` requires `just build` first, uploads the matching sysupgrade image with `scp -O`, then runs `sysupgrade -n` and resets router config.
-- `just clean` removes all ignored build state under `build/`.
+- `task validate` decrypts SOPS secrets, renders `build/files/`, and runs UCI validation for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`.
+- `task render` only renders the real SOPS-backed overlay into `build/files/`.
+- `task build` validates and renders, then builds firmware with ImageBuilder; firmware lands in `build/artifacts/`.
+- `task update` updates only `build.openwrt_version` and `build.imagebuilder_hash` in `config/router.yaml`; it does not decrypt secrets.
+- `task deploy` requires `task build` first, uploads the matching sysupgrade image with `scp -O`, then runs `sysupgrade -n` and resets router config.
+- `task clean` removes all ignored build state under `build/`.
 - `nix flake check --print-build-logs` is the CI check; `nix fmt` is the pre-commit formatter.
 
 ## Build And CI Constraints
 
-- Nix provides the dev shell and formatter only; firmware build logic lives in `Justfile` and `scripts/*.sh`.
+- Nix provides the dev shell and formatter only; firmware build logic lives in `Taskfile.yml` and `scripts/*.sh`.
 - `build/` can contain decrypted secrets, rendered OpenWrt files, downloaded ImageBuilder archives, unpacked builders, and firmware artifacts; it is ignored and should not be committed.
 - GitHub Actions are intentionally non-secret: CI runs only `nix flake check`; it must not decrypt SOPS secrets, render real runtime config, build firmware, or deploy.
 - OpenWrt update automation opens `chore/build` PRs for public release metadata only; validate and build locally before deployment.

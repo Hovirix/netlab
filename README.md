@@ -25,31 +25,31 @@ nix develop
 Validate with encrypted secrets:
 
 ```bash
-just validate
+task validate
 ```
 
 Render real SOPS-backed config into `build/files`:
 
 ```bash
-just render
+task render
 ```
 
 Build firmware into `build/artifacts`:
 
 ```bash
-just build
+task build
 ```
 
 Deploy the built sysupgrade image to the configured router:
 
 ```bash
-just deploy
+task deploy
 ```
 
 Clean generated state:
 
 ```bash
-just clean
+task clean
 ```
 
 ## Layout

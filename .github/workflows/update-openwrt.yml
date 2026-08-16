@@ -23,7 +23,7 @@ jobs:
       - name: Update OpenWrt metadata
         id: update
         run: |
-          nix develop --command just update
+          nix develop --command task update
           version=$(nix develop --command gomplate --datasource "config=file://$PWD/config/router.yaml" --in '{{ (ds "config").build.openwrt_version }}')
           echo "version=$version" >> "$GITHUB_OUTPUT"
 

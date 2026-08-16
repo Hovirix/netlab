@@ -6,14 +6,12 @@ pkgs.mkShell {
     gomplate
     gnumake
     gnutar
-    just
+    go-task
     openssh
     pre-commit
     python3
     sops
     uci
-    unzip
-    wget
     zstd
   ];
 }
