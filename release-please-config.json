@@ -1,0 +1,9 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "initial-version": "1.0.0",
+      "tag-template": "v${major}.${minor}.${patch}"
+    }
+  }
+}
