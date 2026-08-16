@@ -1,3 +1,5 @@
 /.direnv
 /openwrt-imagebuilder-*
 /build
+__pycache__/
+*.pyc

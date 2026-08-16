@@ -1,0 +1,36 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Validate, render, and build firmware
+    deps: [validate, render]
+    cmds:
+      - ./scripts/build.sh
+
+  deploy:
+    desc: Deploy firmware to the router
+    prompt: Flash router with sysupgrade -n?
+    deps: [build]
+    cmds:
+      - ./scripts/deploy.sh
+
+  update:
+    desc: Update OpenWrt release metadata
+    cmds:
+      - python3 ./scripts/update.py
+
+  render:
+    internal: true
+    run: once
+    cmds:
+      - ./scripts/render.sh
+
+  validate:
+    internal: true
+    cmds:
+      - task: render
+      - ./scripts/validate.sh
+
+  clean:
+    cmds:
+      - rm -rf build
