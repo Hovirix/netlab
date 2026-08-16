@@ -1,128 +1,66 @@
 ## Role
 
-You are a network engineer responsible for an OpenWrt firmware configuration for a homelab infrastructure.
-Your job is to maintain the network configuration following a zero-trust model.
+Maintain this repo as an OpenWrt homelab router firmware configuration using a zero-trust network model.
 
-## Repo Structure
+## Sources Of Truth
 
-The project uses the OpenWrt ImageBuilder to build the final firmware.
+- `config/router.yaml` is the non-secret model for build metadata, VLANs, switch ports, firewall policy, DHCP, wireless, AdGuard Home, Dropbear, cron, and services.
+- `config/secrets.sops.yaml` is encrypted runtime input; do not write decrypted secrets outside ignored `build/generated/`.
+- `templates/*.tmpl` render one-for-one into OpenWrt files under ignored `build/files/`; there is no tracked static overlay.
+- Trust executable config and scripts over prose if docs drift.
 
-- `config/router.yaml` is the non-secret source model.
-- `config/secrets.sops.yaml` contains encrypted runtime secrets.
-- Templates under `templates/` map directly to rendered OpenWrt files.
-- Generated OpenWrt files are written under ignored `build/files/`.
-- There is no tracked static firmware overlay.
+## Commands
 
-## Build Pipeline
+- Enter the tool shell first when dependencies may be missing: `nix develop`.
+- `just validate` decrypts SOPS secrets, renders `build/files/`, and runs UCI validation for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`.
+- `just render` only renders the real SOPS-backed overlay into `build/files/`.
+- `just build` runs `validate`, then `render`, then ImageBuilder; firmware lands in `build/artifacts/`.
+- `just update` updates only `build.openwrt_version` and `build.imagebuilder_hash` in `config/router.yaml`; it does not decrypt secrets.
+- `just deploy` requires `just build` first, uploads the matching sysupgrade image with `scp -O`, then runs `sysupgrade -n` and resets router config.
+- `just clean` removes all ignored build state under `build/`.
+- `nix flake check --print-build-logs` is the CI check; `nix fmt` is the pre-commit formatter.
 
-Nix is only used for the developer shell and formatter. The build pipeline is
-run with Just and thin shell scripts.
+## Build And CI Constraints
 
-1. `just validate`: decrypts SOPS secrets and validates generated UCI config.
-1. `just render`: decrypts SOPS secrets and renders `build/files/`.
-1. `just build`: renders real config and builds firmware with ImageBuilder.
-1. `just clean`: removes generated `build/` state.
+- Nix provides the dev shell and formatter only; firmware build logic lives in `Justfile` and `scripts/*.sh`.
+- `build/` can contain decrypted secrets, rendered OpenWrt files, downloaded ImageBuilder archives, unpacked builders, and firmware artifacts; it is ignored and should not be committed.
+- GitHub Actions are intentionally non-secret: CI runs only `nix flake check`; it must not decrypt SOPS secrets, render real runtime config, build firmware, or deploy.
+- OpenWrt update automation opens `chore/build` PRs for public release metadata only; validate and build locally before deployment.
 
-## Reviewing Model
+## Zero-Trust Network Model
 
-- Check the changes to the config files using Git.
-- Assess any illogical configuration or misconfiguration against the current session, network model, and security model.
-- Suggest `just validate` and `nix flake check` as manual validation commands.
-- Output structured tables for changes in each category, such as VLANs, WAN, or VPN.
-
-## Network Model
-
-- ALWAYS FOLLOW THE ZERO-TRUST NETWORK MODEL and topology below.
-- Do not treat `lan` as one trusted network.
-- Each VLAN is a separate security boundary.
-- Default stance is deny between VLANs unless explicitly required.
-- WAN uses IPv6 MAP-E and is untrusted.
-- VPN uses WireGuard and is not trusted LAN by default.
-- Router management should only be reachable from trusted admin paths.
+- Do not treat `lan` as trusted; every VLAN is a separate firewall zone and security boundary.
+- Default stance is deny/reject between VLANs, VPN, and router input unless an explicit rule is required.
+- WAN is IPv6 MAP-E and untrusted; never expose router management or internal services to WAN by default.
+- WireGuard is its own `vpn` zone, not trusted LAN; peers need explicit access only to required VLANs/services.
+- Each allow rule must have a clear source, destination, protocol, destination port, and reason in `config/router.yaml`.
 - Avoid broad access such as `any -> any`, `vpn -> lan`, `guest -> lan`, or `iot -> lan`.
 
-lan:
+## Current Topology
 
-- `vlan10`: Admin clients and physical backup access.
-- `vlan20`: Proxmox host management.
-- `vlan30`: TrueNAS and storage services.
-- `vlan40`: Talos Linux and Kubernetes nodes.
-- `vlan50`: Untrusted Wi-Fi and client devices.
-- `vlan60`: Security lab VMs.
+- `vlan10` admin: DHCP yes, WAN yes, physical backup/admin access on untagged `lan5`, 5 GHz admin Wi-Fi.
+- `vlan20` Proxmox: DHCP no, WAN yes, tagged on `lan1` and `lan2`.
+- `vlan30` storage/TrueNAS: DHCP yes, WAN yes, untagged `lan3`.
+- `vlan40` Talos/Kubernetes/compute: DHCP yes, WAN yes, tagged on `lan1` and `lan2`.
+- `vlan50` untrusted clients: DHCP yes, WAN yes, 2.4 GHz Wi-Fi with client isolation, no switch ports.
+- `vlan60` security lab: DHCP yes, WAN no, tagged on `lan1` and `lan2`.
+- `lan4` is intentionally unused.
 
-vpn:
+## Template Behavior To Preserve
 
-- `wireguard`: Remote access VPN.
-- WireGuard peers must have explicit access only to required VLANs/services.
-
-wan:
-
-- `map-e`: IPv6 MAP-E internet uplink.
-- No management services are exposed to WAN by default.
-
-## Security Model
-
-The network is internal-first.
-
-- NEVER open ports by default.
-- NEVER expose services to WAN by default.
-- NEVER treat WireGuard as trusted LAN by default.
-- NEVER allow inter-VLAN traffic by default.
-- NEVER expose router management, SSH, admin panels, storage, Proxmox, Kubernetes, or lab services unless explicitly required.
-- External access is only allowed through explicit firewall rules for WAN or WireGuard.
-- Every allowed port must have a clear source, destination, protocol, port, and reason.
+- Firewall zone names render as `vlan<ID>` even though model keys are semantic names like `admin`, `storage`, and `talos`.
+- VLANs with `wan: true` get `vlan<ID> -> wan` forwarding; `vpn -> wan` is always rendered; lab currently has no WAN forwarding.
+- DNS router-input allow rules are rendered for every VLAN; DHCP router-input allow rules are rendered only for VLANs with `dhcp: true`.
+- `dnsmasq` has `port: 0`; AdGuard Home is the DNS listener on port `53`, with UI bound to `10.10.0.1:3000`.
+- Wireless SSIDs use SOPS-provided shared name/passwords plus model suffixes; `wireless.interfaces[].network` maps to a VLAN model key.
 
 ## Documentation
 
-- When changing firewall, VLAN, WireGuard, DNS, DHCP, router management, or security behavior, update the relevant documentation.
-- Security-related networking changes should be documented in `docs/zero-trust-network.md`.
-- Operational changes should be documented in `docs/operations.md`.
+- Update `docs/zero-trust-network.md` when changing firewall, VLAN, WireGuard, DNS, DHCP, router management, wireless placement, or security behavior.
+- Update `docs/operations.md` when changing build, validation, update, deployment, or operator workflows.
+- Before flashing, review generated `build/files/etc/config/*` and preserve documented access paths: `lan5` admin, router SSH/HTTPS from `vlan10`, AdGuard UI from `vlan10`, and WAN UDP `51820` for WireGuard.
 
-## Commits and PRs
+## Commits And PRs
 
-Use Conventional Commits for commit messages and Semantic PRs for pull request titles.
-
-Commit messages and PR titles should be structured as follows:
-
-```text
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
-```
-
-Examples:
-
-```text
-docs: update AGENTS network model
-```
-
-```text
-fix(firewall): restrict WireGuard access to admin VLAN
-```
-
-```text
-test(uci): add fixture coverage for Gomplate rendering
-```
-
-Common types:
-
-- `feat`: adds new behavior
-- `fix`: fixes incorrect behavior
-- `docs`: documentation-only changes
-- `refactor`: restructures code or config without changing behavior
-- `test`: adds or updates tests
-- `chore`: maintenance changes
-- `ci`: CI workflow changes
-- `build`: build system or dependency changes
-
-Avoid the `openwrt` scope in commit messages and PR titles because OpenWrt is
-the primary component of this repository. Prefer the specific subsystem scope,
-such as `firewall`, `vpn`, `dns`, `wireless`, `build`, or no scope.
-
-For PRs:
-
-- The PR title must use the same Conventional Commit format.
-- The PR body should briefly summarize the change and validation.
-- Keep titles specific, concise, and action-oriented.
+- Use Conventional Commits and Semantic PR titles, for example `fix(firewall): restrict WireGuard access to admin VLAN`.
+- Avoid `openwrt` as a scope because it is the whole repo; prefer scopes like `firewall`, `vpn`, `dns`, `wireless`, `build`, `deps`, or no scope.
