@@ -21,6 +21,12 @@
       formatter.${system} = treefmtEval.config.build.wrapper;
       devShells.${system}.default = import ./shell.nix { inherit pkgs; };
 
-      checks.${system}.formatting = treefmtEval.config.build.check self;
+      checks.${system} = {
+        formatting = treefmtEval.config.build.check self;
+        actionlint = pkgs.runCommand "actionlint" { nativeBuildInputs = [ pkgs.actionlint ]; } ''
+          actionlint ${self}/.github/workflows/*.yml
+          touch $out
+        '';
+      };
     };
 }

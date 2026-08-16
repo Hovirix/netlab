@@ -8,12 +8,12 @@ This repo uses Gomplate templates to render final OpenWrt config files into
 | Command | Purpose |
 | --- | --- |
 | `nix develop` | Enter the reproducible tool shell. |
-| `just validate` | Decrypt SOPS secrets and validate generated UCI. |
-| `just render` | Decrypt SOPS secrets and render `build/files`. |
-| `just build` | Render real config and build firmware with ImageBuilder. |
-| `just update` | Update the OpenWrt release and pinned ImageBuilder hash without decrypting secrets. |
-| `just deploy` | Upload the built sysupgrade image with `scp -O` and run `sysupgrade -n`. |
-| `just clean` | Remove `build/`. |
+| `task validate` | Decrypt SOPS secrets and validate generated UCI. |
+| `task render` | Decrypt SOPS secrets and render `build/files`. |
+| `task build` | Render real config and build firmware with ImageBuilder. |
+| `task update` | Update the OpenWrt release and pinned ImageBuilder hash without decrypting secrets. |
+| `task deploy` | Upload the built sysupgrade image with `scp -O` and run `sysupgrade -n`. |
+| `task clean` | Remove `build/`. |
 
 ## CI And Updates
 
@@ -23,16 +23,45 @@ firmware, or deploy to the router.
 
 | Automation | Scope | Secrets Required |
 | --- | --- | --- |
-| `check.yml` | Runs `nix flake check` for formatting and Nix evaluation. | no |
+| `check.yml` | Runs `nix flake check` for formatting, Nix evaluation, and workflow linting. | no |
 | Renovate | Opens PRs for `flake.lock` input updates and GitHub Actions versions. | no |
 | `update-openwrt.yml` | Opens PRs for `build.openwrt_version` and `build.imagebuilder_hash`. | no |
+| `release.yml` | Publishes semver tags and changelog-only GitHub Releases on merges to `main`. | no |
+
+## Releases
+
+`release.yml` runs `nix flake check` before Release Please tags stable config
+states as `vX.Y.Z` and generates changelogs from Conventional Commits. Release
+Please tracks the current version in `.release-please-manifest.json`; there is
+no `version.txt`.
+
+Configure GitHub repository settings to require `Check / Nix flake check` on
+`main`, prevent administrators from bypassing the rule, protect `v*` tags, and
+allow only trusted GitHub Actions. These controls protect direct pushes and
+cannot be enforced by workflow files.
+
+A release tag marks a reproducible build point: checkout the tag and build the
+firmware exactly as released.
+
+```bash
+git checkout v1.0.0
+nix develop
+task build
+```
+
+Releases contain a tag and changelog only. Never upload firmware images or
+decrypted secrets to GitHub Releases.
 
 OpenWrt update PRs only update public release metadata in `config/router.yaml`.
+The updater verifies the target-level signed `sha256sums` manifest with the
+vendored OpenWrt Build System public key before it downloads and pins the
+ImageBuilder archive hash. The update workflow runs non-secret checks before
+it opens a PR; PRs created with `GITHUB_TOKEN` do not trigger `check.yml`.
 Review and validate them locally before merge or deployment:
 
 ```bash
-just validate
-just build
+task validate
+task build
 ```
 
 ## Generated Files
@@ -65,17 +94,17 @@ these access paths remain present:
 | Path | Required Before Hardening |
 | --- | --- |
 | Physical backup | `lan5` provides untagged access to `vlan10`. |
-| Mini PC trunks | `lan1` and `lan2` provide tagged access to VLANs `20`, `40`, and `60`. |
+| Mini PC trunks | `lan1` and `lan2` provide tagged access to VLANs `20`, `40`, `50`, and `60`. |
 | TrueNAS access | `lan3` provides untagged DHCP access to `vlan30`. |
-| Local admin | Admin client can get DHCP on `vlan10`. |
+| Local management | Management client can get DHCP on `vlan10`. |
 | Router SSH | `vlan10 -> router` TCP `22` works. |
 | Router HTTPS | `vlan10 -> router` TCP `443` works if LuCI or HTTPS admin is used. |
 | AdGuard Home UI | `vlan10 -> router` TCP `3000` works. |
 | WireGuard | WAN UDP `51820` reaches the router. |
 
-`just deploy` reads the target from `config/router.yaml`, uploads the matching
+`task deploy` reads the target from `config/router.yaml`, uploads the matching
 sysupgrade artifact from `build/artifacts` to `/tmp` with `scp -O`, then runs
-`sysupgrade -n` over SSH. Build first with `just build`.
+`sysupgrade -n` over SSH. Build first with `task build`.
 
 After deploying to the router, validate firewall syntax before restarting it:
 
@@ -98,19 +127,19 @@ When adding a VLAN:
 1. Add DHCP behavior through the VLAN `dhcp` flag.
 1. Confirm `templates/firewall.tmpl` derives a separate zone.
 1. Add only explicit forwarding/rules required by the zero-trust model.
-1. Run `just validate`.
+1. Run `task validate`.
 1. Review generated `build/files/etc/config/*`.
 
 When adding an allow rule:
 
 1. Add source, destination, protocol, port, and reason in `config/router.yaml`.
 1. Avoid broad `any -> any`, `vpn -> lan`, `guest -> lan`, or `iot -> lan` rules.
-1. Run `just validate`.
+1. Run `task validate`.
 1. Review the generated firewall rule in `build/files/etc/config/firewall`.
 
 When adding a DHCP reservation:
 
 1. Add the host under `dhcp.static_leases` in `config/router.yaml` with `name`, `vlan`, `mac`, and `ip`.
 1. Keep the reserved IP inside the VLAN subnet and outside the dynamic DHCP pool.
-1. Run `just validate`.
+1. Run `task validate`.
 1. Review the generated host entry in `build/files/etc/config/dhcp`.

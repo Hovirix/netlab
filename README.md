@@ -25,31 +25,31 @@ nix develop
 Validate with encrypted secrets:
 
 ```bash
-just validate
+task validate
 ```
 
 Render real SOPS-backed config into `build/files`:
 
 ```bash
-just render
+task render
 ```
 
 Build firmware into `build/artifacts`:
 
 ```bash
-just build
+task build
 ```
 
 Deploy the built sysupgrade image to the configured router:
 
 ```bash
-just deploy
+task deploy
 ```
 
 Clean generated state:
 
 ```bash
-just clean
+task clean
 ```
 
 ## Layout
@@ -58,7 +58,7 @@ just clean
 config/router.yaml          non-secret source model
 config/secrets.sops.yaml    encrypted runtime secrets
 templates/                  one template per rendered OpenWrt file
-scripts/                    thin render/validate/build glue
+scripts/                    thin task scripts and update helper
 build/                      ignored generated output
 ```
 
