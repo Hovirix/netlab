@@ -3,6 +3,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.request import urlopen
 import hashlib
+import json
 import re
 import shutil
 import subprocess
@@ -12,10 +13,13 @@ import time
 
 CONFIG_FILE = Path("config/router.yaml")
 DOWNLOADS_DIR = Path("build/downloads")
+RELEASE_NOTES_FILE = Path("build/openwrt-release-notes.md")
 SIGNING_KEY = Path("keys/openwrt-build-system.asc")
 HOST_SUFFIX = "Linux-x86_64"
 DOWNLOAD_TIMEOUT_SECONDS = 60
 DOWNLOAD_ATTEMPTS = 3
+OPENWRT_RELEASES_URL = "https://api.github.com/repos/openwrt/openwrt/releases?per_page=100"
+MAX_PR_BODY_BYTES = 60_000
 
 
 class LinkParser(HTMLParser):
@@ -61,6 +65,87 @@ def latest_openwrt_version():
         raise SystemExit("no OpenWrt release versions found")
 
     return ".".join(str(part) for part in max(versions))
+
+
+def version_tuple(version):
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        raise SystemExit(f"invalid OpenWrt version: {version}")
+    return tuple(int(part) for part in version.split("."))
+
+
+def fetch_json(url):
+    last_error = None
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            with urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
+                return json.loads(response.read())
+        except (OSError, json.JSONDecodeError) as error:
+            last_error = error
+            if attempt < DOWNLOAD_ATTEMPTS:
+                time.sleep(attempt)
+    raise SystemExit(f"failed to retrieve {url}: {last_error}")
+
+
+def write_release_notes(current_version, latest_version):
+    current = version_tuple(current_version)
+    latest = version_tuple(latest_version)
+    releases = []
+
+    available_releases = fetch_json(OPENWRT_RELEASES_URL)
+    if not isinstance(available_releases, list):
+        raise SystemExit("OpenWrt GitHub releases returned an unexpected response")
+
+    for release in available_releases:
+        tag = release.get("tag_name", "")
+        if not tag.startswith("v") or release.get("draft") or release.get("prerelease"):
+            continue
+        try:
+            release_version = version_tuple(tag.removeprefix("v"))
+        except SystemExit:
+            continue
+        if current < release_version <= latest:
+            releases.append((release_version, release))
+
+    releases.sort()
+    if not releases or releases[-1][0] != latest:
+        raise SystemExit(
+            f"OpenWrt GitHub releases do not contain notes for {latest_version}"
+        )
+
+    sections = [
+        "# OpenWrt Update",
+        "",
+        f"Updates OpenWrt from `{current_version}` to `{latest_version}`.",
+        "The ImageBuilder checksum was verified against OpenWrt's signed checksum manifest.",
+        "",
+        "## Upstream Release Notes",
+    ]
+    for release_version, release in releases:
+        version = ".".join(str(part) for part in release_version)
+        series = ".".join(version.split(".")[:2])
+        sections.extend(
+            [
+                "",
+                f"## OpenWrt {version}",
+                "",
+                f"Released: {release['published_at']}",
+                f"[GitHub release]({release['html_url']}) | "
+                f"[Release notes](https://openwrt.org/releases/{series}/notes-{version}) | "
+                f"[Full changelog](https://openwrt.org/releases/{series}/changelog-{version})",
+                "",
+                release.get("body", "").replace("\r\n", "\n").strip(),
+            ]
+        )
+
+    body = "\n".join(sections).strip() + "\n"
+    if len(body.encode()) > MAX_PR_BODY_BYTES:
+        raise SystemExit(
+            "OpenWrt release notes exceed GitHub's PR body limit; review the "
+            "upstream releases before updating"
+        )
+
+    RELEASE_NOTES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    RELEASE_NOTES_FILE.write_text(body)
 
 
 def download(url, path):
@@ -142,6 +227,10 @@ def main():
     latest_version = latest_openwrt_version()
 
     if latest_version == current_version:
+        RELEASE_NOTES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        RELEASE_NOTES_FILE.write_text(
+            f"# OpenWrt Update\n\nOpenWrt is already current at `{current_version}`.\n"
+        )
         print(f"OpenWrt is already current: {current_version}")
         return
 
@@ -175,6 +264,7 @@ def main():
     ).strip()
 
     update_build_metadata(latest_version, imagebuilder_hash)
+    write_release_notes(current_version, latest_version)
 
     print(
         "Updated config/router.yaml to OpenWrt "
