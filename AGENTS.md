@@ -1,63 +1,36 @@
-## Role
-
-Maintain this repo as an OpenWrt homelab router firmware configuration using a zero-trust network model.
-
 ## Sources Of Truth
 
-- `config/router.yaml` is the non-secret model for build metadata, VLANs, switch ports, firewall policy, DHCP, wireless, AdGuard Home, Dropbear, cron, and services.
-- `config/secrets.sops.yaml` is encrypted runtime input; do not write decrypted secrets outside ignored `build/generated/`.
-- `templates/*.tmpl` render one-for-one into OpenWrt files under ignored `build/files/`; there is no tracked static overlay.
-- Trust executable config and scripts over prose if docs drift.
+- `config/router.yaml` is the non-secret desired-state model: build metadata, VLANs, switch ports, firewall policy, DHCP, wireless, and services.
+- `config/secrets.sops.yaml` is encrypted runtime input. Decrypt it only through the renderer; decrypted data belongs only in ignored `build/generated/`.
+- `templates/` plus `scripts/render.sh` define the entire generated OpenWrt overlay in ignored `build/files/`; there is no static overlay to edit.
+- Prefer the templates and scripts over README prose when they differ.
 
 ## Commands
 
-- Enter the tool shell first when dependencies may be missing: `nix develop`.
-- `task build` runs the internal `render` and `validate` steps (decrypting SOPS secrets, rendering `build/files/`, and running UCI validation for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`), then builds firmware with ImageBuilder; firmware lands in `build/artifacts/`.
-- `task update` updates only `build.openwrt_version` and `build.imagebuilder_hash` in `config/router.yaml`; it does not decrypt secrets.
-- `task deploy` requires `task build` first, uploads the matching sysupgrade image with `scp -O`, then runs `sysupgrade -n` and resets router config.
-- `nix flake check --print-build-logs` is the CI check; `nix fmt` is the pre-commit formatter.
+- `task check` runs the non-secret, focused workflow check: `actionlint`.
+- `nix flake check --print-build-logs` is the CI-equivalent check; `nix fmt` is also the pre-commit formatter.
+- `task build` decrypts and renders secrets, validates UCI syntax for `network`, `dhcp`, `firewall`, `wireless`, and `dropbear`, verifies the ImageBuilder hash, then writes firmware to `build/artifacts/`.
+- `task update` fetches and verifies OpenWrt's signed checksum manifest, changes only the version and ImageBuilder hash in `config/router.yaml`, and writes ignored release notes/downloads under `build/`. It does not decrypt runtime secrets.
+- `task deploy` builds first, then uploads the matching sysupgrade image with `scp -O` and executes `sysupgrade -n`; it resets router configuration and reboots the device.
 
-## Build And CI Constraints
+## Security Model
 
-- Nix provides the dev shell and formatter only; firmware build logic lives in `Taskfile.yml` and `scripts/`.
-- `build/` can contain decrypted secrets, rendered OpenWrt files, downloaded ImageBuilder archives, unpacked builders, and firmware artifacts; it is ignored and should not be committed.
-- GitHub Actions are intentionally non-secret: CI runs `nix flake check` and tags changelog-only releases; it must not decrypt SOPS secrets, render real runtime config, build firmware, or deploy.
-- GitHub Releases hold tag and changelog only, never firmware images or decrypted secrets; a release tag is a reproducible build point (`git checkout vX.Y.Z && task build`).
-- OpenWrt update automation opens `chore/build` PRs for public release metadata only; validate and build locally before deployment.
+- Every VLAN and WireGuard are separate firewall zones. Router input and inter-zone forwarding are default-deny; add only narrow, documented flows in `config/router.yaml`.
+- Model firewall permits with a concrete source, destination, protocol, port, and reason. Do not introduce broad VLAN or VPN forwarding.
+- WAN is IPv6 MAP-E and untrusted. Do not expose router management or internal services to WAN beyond the explicit WireGuard listener.
+- Template zone names are `vlan<ID>`, not the semantic keys from `router.yaml`; use the model keys in rules and template lookups.
+- `wan: true` produces `vlan<ID> -> wan`; `vpn -> wan` is unconditional. `cyberlab` intentionally has no WAN forwarding.
+- DNS input allows are generated for every VLAN; DHCP input allows and pools are generated only for VLANs with `dhcp: true`.
+- `dnsmasq` is not the DNS listener (`port: 0`); AdGuard Home binds DNS port 53 and its UI is `10.10.0.1:3000`.
 
-## Zero-Trust Network Model
+## Topology And Recovery
 
-- Do not treat `lan` as trusted; every VLAN is a separate firewall zone and security boundary.
-- Default stance is deny/reject between VLANs, VPN, and router input unless an explicit rule is required.
-- WAN is IPv6 MAP-E and untrusted; never expose router management or internal services to WAN by default.
-- WireGuard is its own `vpn` zone, not trusted LAN; peers need explicit access only to required VLANs/services.
-- Each allow rule must have a clear source, destination, protocol, destination port, and reason in `config/router.yaml`.
-- Avoid broad access such as `any -> any`, `vpn -> lan`, `guest -> lan`, or `iot -> lan`.
+- Preserve management recovery access: untagged `lan5` is `vlan10`; `lan4` is intentionally unused. Router SSH/HTTPS and AdGuard UI are available from management and VPN; WAN UDP 51820 is WireGuard.
+- `lan1`/`lan2` tag Proxmox, homelab, kubelab, and cyberlab; `lan3` is untagged TrueNAS. Client Wi-Fi maps to `vlan70` with isolation; admin Wi-Fi maps to `vlan10`.
+- Before deployment, inspect generated `build/files/etc/config/*`. `build/` may hold decrypted secrets, ImageBuilder downloads, and firmware, and must never be committed.
 
-## Current Topology
+## Automation
 
-- `vlan10` management: DHCP yes, WAN yes, physical backup/management access on untagged `lan5`, 5 GHz admin Wi-Fi.
-- `vlan20` Proxmox: DHCP no, WAN yes, tagged on `lan1` and `lan2`.
-- `vlan30` TrueNAS: DHCP yes, WAN yes, untagged `lan3`.
-- `vlan40` homelab: DHCP yes, WAN yes, tagged on `lan1` and `lan2`; prod Docker Swarm nodes (static leases `swarm-01/02/03`).
-- `vlan50` kubelab: DHCP yes, WAN yes, tagged on `lan1` and `lan2`; Kubernetes/Talos workloads.
-- `vlan60` cyberlab: DHCP yes, WAN no, tagged on `lan1` and `lan2`; security lab.
-- `vlan70` clients: DHCP yes, WAN yes, 2.4 GHz Wi-Fi with client isolation, no switch ports.
-- `lan4` is intentionally unused.
-
-## Template Behavior To Preserve
-
-- Firewall zone names render as `vlan<ID>` even though model keys are semantic names like `management`, `truenas`, and `homelab`.
-- VLANs with `wan: true` get `vlan<ID> -> wan` forwarding; `vpn -> wan` is always rendered; lab currently has no WAN forwarding.
-- DNS router-input allow rules are rendered for every VLAN; DHCP router-input allow rules are rendered only for VLANs with `dhcp: true`.
-- `dnsmasq` has `port: 0`; AdGuard Home is the DNS listener on port `53`, with UI bound to `10.10.0.1:3000`.
-- Wireless SSIDs use SOPS-provided shared name/passwords plus model suffixes; `wireless.interfaces[].network` maps to a VLAN model key.
-
-## Deployment Safety
-
-- Before flashing, review generated `build/files/etc/config/*` and preserve documented access paths: `lan5` management, router SSH/HTTPS from `vlan10`, AdGuard UI from `vlan10`, and WAN UDP `51820` for WireGuard.
-
-## Commits And PRs
-
-- Use Conventional Commits and Semantic PR titles, for example `fix(firewall): restrict WireGuard access to management VLAN`.
-- Avoid `openwrt` as a scope because it is the whole repo; prefer scopes like `firewall`, `vpn`, `dns`, `wireless`, `build`, `deps`, or no scope.
+- CI is deliberately non-secret: it runs only `nix flake check`. Releases contain tags and changelogs, not firmware.
+- The weekly update workflow opens `chore/update-openwrt` PRs limited to `config/router.yaml`; locally build and validate an update before deploying it.
+- Release Please uses Conventional Commits. Prefer scopes such as `firewall`, `vpn`, `dns`, `wireless`, `build`, or `deps`, not `openwrt`.
