@@ -53,10 +53,8 @@ Maintain this repo as an OpenWrt homelab router firmware configuration using a z
 - `dnsmasq` has `port: 0`; AdGuard Home is the DNS listener on port `53`, with UI bound to `10.10.0.1:3000`.
 - Wireless SSIDs use SOPS-provided shared name/passwords plus model suffixes; `wireless.interfaces[].network` maps to a VLAN model key.
 
-## Documentation
+## Deployment Safety
 
-- Update `docs/zero-trust-network.md` when changing firewall, VLAN, WireGuard, DNS, DHCP, router management, wireless placement, or security behavior.
-- Update `docs/operations.md` when changing build, validation, update, deployment, or operator workflows.
 - Before flashing, review generated `build/files/etc/config/*` and preserve documented access paths: `lan5` management, router SSH/HTTPS from `vlan10`, AdGuard UI from `vlan10`, and WAN UDP `51820` for WireGuard.
 
 ## Commits And PRs
