@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/Hovirix/netlab/compare/v1.0.0...v1.0.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **ci:** repair OpenWrt update workflow ([#27](https://github.com/Hovirix/netlab/issues/27)) ([7458c8a](https://github.com/Hovirix/netlab/commit/7458c8a53087dee4cb86537a41be7a78b1f50913))
+* **format:** exclude changelog from treefmt ([#31](https://github.com/Hovirix/netlab/issues/31)) ([3432c17](https://github.com/Hovirix/netlab/commit/3432c171186a38895ce75c234f9a9279594c03fb))
+
 ## 1.0.0 (2026-08-16)
 
 ### Features
