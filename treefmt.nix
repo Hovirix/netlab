@@ -3,7 +3,10 @@
 
   programs = {
     deadnix.enable = true;
-    mdformat.enable = true;
+    mdformat = {
+      enable = true;
+      excludes = [ "CHANGELOG.md" ];
+    };
     nixfmt.enable = true;
     shfmt = {
       enable = true;
