@@ -44,3 +44,4 @@ jobs:
           delete-branch: true
           title: "chore(build): update OpenWrt to ${{ steps.update.outputs.version }}"
           commit-message: "chore(build): update OpenWrt to ${{ steps.update.outputs.version }}"
+          sign-commits: true
