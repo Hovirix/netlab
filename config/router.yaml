@@ -275,6 +275,12 @@ firewall:
       port: 2049
       reason: NFSv4 storage access
 
+    - src: truenas
+      dest: proxmox
+      proto: tcp
+      port: 22
+      reason: Proxmox SSH access from TrueNAS
+
     - src: proxmox
       dest: truenas
       proto: tcp
