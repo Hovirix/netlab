@@ -14,7 +14,10 @@
     taplo.enable = true;
     typos = {
       enable = true;
-      excludes = [ "config/*.sops.yaml" ];
+      excludes = [
+        "config/*.sops.yaml"
+        "keys/*.asc"
+      ];
     };
     yamlfmt = {
       enable = true;
