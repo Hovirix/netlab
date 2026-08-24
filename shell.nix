@@ -14,7 +14,9 @@ pkgs.mkShell {
     python3
     sops
     uci
+    unzip
     yq-go
+    wget
     zstd
   ];
 }
