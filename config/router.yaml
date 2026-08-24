@@ -263,6 +263,22 @@ firewall:
         - vpn
       dest: homelab
       proto: tcp
+      port: 80
+      reason: Homelab HTTP access
+
+    - srcs:
+        - management
+        - vpn
+      dest: homelab
+      proto: tcp
+      port: 443
+      reason: Homelab HTTPS access
+
+    - srcs:
+        - management
+        - vpn
+      dest: homelab
+      proto: tcp
       port: 22
       reason: Docker Swarm node SSH administration
 
