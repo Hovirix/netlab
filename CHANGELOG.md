@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/Hovirix/netlab/compare/v1.0.1...v1.1.0) (2026-09-01)
+
+
+### Features
+
+* **firewall:** allow homelab web access ([#35](https://github.com/Hovirix/netlab/issues/35)) ([a6587ca](https://github.com/Hovirix/netlab/commit/a6587ca70e377912cd7f665c8fa890c1bfe0a903))
+* **firewall:** allow TrueNAS SSH to Proxmox ([#32](https://github.com/Hovirix/netlab/issues/32)) ([205bb96](https://github.com/Hovirix/netlab/commit/205bb96b0e5308536f553802d594406f070d7737))
+
 ## [1.0.1](https://github.com/Hovirix/netlab/compare/v1.0.0...v1.0.1) (2026-08-23)
 
 
