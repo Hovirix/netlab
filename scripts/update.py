@@ -12,6 +12,7 @@ import time
 
 
 CONFIG_FILE = Path("config/router.yaml")
+README_FILE = Path("README.md")
 DOWNLOADS_DIR = Path("build/downloads")
 RELEASE_NOTES_FILE = Path("build/openwrt-release-notes.md")
 SIGNING_KEY = Path("keys/openwrt-build-system.asc")
@@ -112,14 +113,7 @@ def write_release_notes(current_version, latest_version):
             f"OpenWrt GitHub releases do not contain notes for {latest_version}"
         )
 
-    sections = [
-        "# OpenWrt Update",
-        "",
-        f"Updates OpenWrt from `{current_version}` to `{latest_version}`.",
-        "The ImageBuilder checksum was verified against OpenWrt's signed checksum manifest.",
-        "",
-        "## Upstream Release Notes",
-    ]
+    sections = []
     for release_version, release in releases:
         version = ".".join(str(part) for part in release_version)
         series = ".".join(version.split(".")[:2])
@@ -218,7 +212,23 @@ def update_build_metadata(version, imagebuilder_hash):
 
     text = replace("openwrt_version", version)
     text = replace("imagebuilder_hash", imagebuilder_hash)
+
+    readme_text = README_FILE.read_text()
+    readme_text, count = re.subn(
+        r"(\[!\[OpenWrt\]\(https://img\.shields\.io/badge/OpenWrt-)"
+        r"[0-9]+\.[0-9]+\.[0-9]+"
+        r"(-blue\?logo=openwrt\)\]\(https://downloads\.openwrt\.org/releases/)"
+        r"[0-9]+\.[0-9]+\.[0-9]+"
+        r"(/\))",
+        rf"\g<1>{version}\g<2>{version}\g<3>",
+        readme_text,
+        count=1,
+    )
+    if count != 1:
+        raise SystemExit("missing OpenWrt badge in README.md")
+
     CONFIG_FILE.write_text(text)
+    README_FILE.write_text(readme_text)
 
 
 def main():
