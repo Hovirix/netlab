@@ -51,9 +51,14 @@ verify_archive() {
 verify_overlay() {
   for file in \
     etc/config/network \
+    etc/config/dhcp \
     etc/config/firewall \
+    etc/config/wireless \
+    etc/config/dropbear \
     etc/dropbear/authorized_keys \
-    etc/adguardhome/adguardhome.yaml; do
+    etc/adguardhome/adguardhome.yaml \
+    etc/crontabs/root \
+    etc/uci-defaults/99-service; do
 
     if ! grep -Fxq "squashfs-root/$file" build/.rootfs-list; then
       printf 'Error: sysupgrade image is missing overlay file: %s\n' "$file" >&2

@@ -10,4 +10,4 @@ done
 test -s build/files/etc/adguardhome/adguardhome.yaml
 test -s build/files/etc/dropbear/authorized_keys
 test -s build/files/etc/crontabs/root
-test -s build/files/etc/uci-defaults/99-service
+test -x build/files/etc/uci-defaults/99-service
