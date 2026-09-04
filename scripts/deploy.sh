@@ -1,43 +1,84 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-artifacts_dir="build/artifacts"
-config_datasource="config=file://$PWD/config/router.yaml"
+config_value() {
+  gomplate \
+    --datasource config=config/router.yaml \
+    --in "{{ (ds \"config\").build.$1 }}"
+}
 
-openwrt_version="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.openwrt_version }}')"
-target="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.target }}')"
-subtarget="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.subtarget }}')"
-profile="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.profile }}')"
-router_host="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.router.host }}')"
-router_user="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.router.user }}')"
-router_port="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.router.port }}')"
+openwrt_version="$(config_value openwrt_version)"
+target="$(config_value target)"
+subtarget="$(config_value subtarget)"
+profile="$(config_value profile)"
 
-artifact_glob="openwrt-$openwrt_version-$target-$subtarget-$profile-squashfs-sysupgrade.*"
-artifact_path=""
+router_host="$(config_value router.host)"
+router_user="$(config_value router.user)"
+router_port="$(config_value router.port)"
 
-for candidate in "$artifacts_dir"/$artifact_glob; do
-  if [ -f "$candidate" ]; then
-    artifact_path="$candidate"
-    break
-  fi
-done
+artifact_name="openwrt-$openwrt_version-$target-$subtarget-$profile-squashfs-sysupgrade.bin"
+artifact_path="build/artifacts/$artifact_name"
 
-if [ -z "$artifact_path" ]; then
-  printf 'Error: expected sysupgrade image not found matching: %s/%s\n' "$artifacts_dir" "$artifact_glob" >&2
+remote_path="/tmp/sysupgrade.bin"
+destination="$router_user@$router_host"
+
+ssh_opts=(
+  -o BatchMode=yes
+  -o ConnectTimeout=10
+  -p "$router_port"
+)
+
+scp_opts=(
+  -O
+  -q
+  -o BatchMode=yes
+  -o ConnectTimeout=10
+  -P "$router_port"
+)
+
+if [ ! -f "$artifact_path" ]; then
+  printf 'Error: expected sysupgrade image not found: %s\n' "$artifact_path" >&2
   printf 'Run `task build` first.\n' >&2
   exit 1
 fi
 
-artifact_name="$(basename "$artifact_path")"
-remote_path="/tmp/$artifact_name"
+printf 'Deploying %s to %s:%s\n' "$artifact_name" "$destination" "$router_port"
 
-printf 'Target router: %s@%s:%s\n' "$router_user" "$router_host" "$router_port"
-printf 'Artifact: %s\n' "$artifact_path"
-printf 'Remote path: %s\n\n' "$remote_path"
-printf 'WARNING: sysupgrade -n will flash the image, reset config, and reboot the router.\n'
+printf 'Uploading firmware... '
+scp "${scp_opts[@]}" \
+  "$artifact_path" \
+  "$destination:$remote_path"
+printf 'ok\n'
 
-printf 'Uploading firmware with scp -O\n'
-scp -O -P "$router_port" "$artifact_path" "$router_user@$router_host:$remote_path"
+printf 'Validating firmware... '
+ssh "${ssh_opts[@]}" \
+  "$destination" \
+  "sysupgrade -T '$remote_path' >/dev/null"
+printf 'ok\n'
 
-printf 'Running sysupgrade -n on router\n'
-ssh -p "$router_port" "$router_user@$router_host" "sysupgrade -n '$remote_path'"
+printf 'Starting sysupgrade... '
+
+if upgrade_output="$(ssh "${ssh_opts[@]}" \
+  "$destination" \
+  "sysupgrade -n '$remote_path'" 2>&1)"; then
+
+  printf 'router is rebooting.\n'
+else
+  status=$?
+
+  case "$status" in
+  246)
+    # ubus exits with -10 after sysupgrade stops it, which the shell reports as 246.
+    printf 'router is rebooting.\n'
+    ;;
+  255)
+    printf 'router is rebooting.\n'
+    ;;
+  *)
+    printf 'failed\n' >&2
+    printf '%s\n' "$upgrade_output" >&2
+    printf 'Error: sysupgrade/SSH exited with status %d.\n' "$status" >&2
+    exit "$status"
+    ;;
+  esac
+fi

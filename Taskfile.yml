@@ -1,5 +1,7 @@
 version: '3'
 
+silent: true
+
 tasks:
   build:
     desc: Validate, render, and build firmware
@@ -10,9 +12,9 @@ tasks:
   deploy:
     desc: Deploy firmware to the router
     prompt: Flash router with sysupgrade -n?
-    deps: [build]
     cmds:
       - ./scripts/deploy.sh
+      - task: clean
 
   update:
     desc: Update OpenWrt release metadata

@@ -1,44 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-generated_dir="build/generated"
-stage_dir="build/files"
-config_dir="$stage_dir/etc/config"
-adguardhome_dir="$stage_dir/etc/adguardhome"
-dropbear_dir="$stage_dir/etc/dropbear"
-crontabs_dir="$stage_dir/etc/crontabs"
-uci_defaults_dir="$stage_dir/etc/uci-defaults"
+rm -rf build/generated build/files
 
-rm -rf "$generated_dir" "$stage_dir"
-mkdir -p "$generated_dir" "$config_dir" "$adguardhome_dir" "$dropbear_dir" "$crontabs_dir" "$uci_defaults_dir"
+mkdir -p \
+  build/files/etc/config \
+  build/files/etc/adguardhome \
+  build/files/etc/dropbear \
+  build/files/etc/crontabs \
+  build/files/etc/uci-defaults
 
-secrets_source="config/secrets.sops.yaml"
-
-if [ ! -r "$secrets_source" ]; then
-  printf 'Error: secrets file not found or unreadable: %s\n' "$secrets_source" >&2
-  exit 1
-fi
-
-sops -d "$secrets_source" >"$generated_dir/secrets.yaml"
+secrets_yaml="$(sops -d config/secrets.sops.yaml)"
 
 gomplate_args=(
-  --datasource "config=file://$PWD/config/router.yaml"
-  --datasource "secrets=file://$PWD/$generated_dir/secrets.yaml"
+  --datasource config=config/router.yaml
+  --datasource secrets=stdin:///secrets.yaml
 )
 
-outputs=(
-  "network.tmpl:$config_dir/network"
-  "dhcp.tmpl:$config_dir/dhcp"
-  "firewall.tmpl:$config_dir/firewall"
-  "wireless.tmpl:$config_dir/wireless"
-  "dropbear.tmpl:$config_dir/dropbear"
-  "adguardhome.yaml.tmpl:$adguardhome_dir/adguardhome.yaml"
-  "authorized_keys.tmpl:$dropbear_dir/authorized_keys"
-  "root-crontab.tmpl:$crontabs_dir/root"
-  "99-service.tmpl:$uci_defaults_dir/99-service"
-)
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/network.tmpl --out build/files/etc/config/network
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/dhcp.tmpl --out build/files/etc/config/dhcp
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/firewall.tmpl --out build/files/etc/config/firewall
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/wireless.tmpl --out build/files/etc/config/wireless
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/dropbear.tmpl --out build/files/etc/config/dropbear
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/adguardhome.yaml.tmpl --out build/files/etc/adguardhome/adguardhome.yaml
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/authorized_keys.tmpl --out build/files/etc/dropbear/authorized_keys
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/root-crontab.tmpl --out build/files/etc/crontabs/root
+printf '%s\n' "$secrets_yaml" | gomplate "${gomplate_args[@]}" --file templates/99-service.tmpl --out build/files/etc/uci-defaults/99-service
 
-for output in "${outputs[@]}"; do
-  gomplate "${gomplate_args[@]}" --file "templates/${output%%:*}" --out "${output#*:}"
-done
-chmod +x "$uci_defaults_dir/99-service"
+chmod +x build/files/etc/uci-defaults/99-service
