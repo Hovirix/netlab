@@ -60,14 +60,21 @@ if ssh "${ssh_opts[@]}" \
   "$destination" \
   "sysupgrade -n '$remote_path'"; then
 
-  printf 'Sysupgrade completed successfully.\n'
+  printf 'Sysupgrade handoff completed.\n'
 else
   status=$?
 
-  if [ "$status" -eq 255 ]; then
+  case "$status" in
+  246)
+    # ubus exits with -10 after sysupgrade stops it, which the shell reports as 246.
+    printf 'Sysupgrade started; ubus closed during router shutdown.\n'
+    ;;
+  255)
     printf 'SSH connection closed while router is rebooting.\n'
-  else
+    ;;
+  *)
     printf 'Error: sysupgrade/SSH exited with status %d.\n' "$status" >&2
     exit "$status"
-  fi
+    ;;
+  esac
 fi
