@@ -30,6 +30,7 @@ ssh_opts=(
 
 scp_opts=(
   -O
+  -q
   -o BatchMode=yes
   -o ConnectTimeout=10
   -P "$router_port"
@@ -41,38 +42,41 @@ if [ ! -f "$artifact_path" ]; then
   exit 1
 fi
 
-printf 'Target:   %s:%s\n' "$destination" "$router_port"
-printf 'Artifact: %s\n' "$artifact_path"
+printf 'Deploying %s to %s:%s\n' "$artifact_name" "$destination" "$router_port"
 
-printf 'Uploading firmware\n'
+printf 'Uploading firmware... '
 scp "${scp_opts[@]}" \
   "$artifact_path" \
   "$destination:$remote_path"
+printf 'ok\n'
 
-printf 'Validating firmware\n'
+printf 'Validating firmware... '
 ssh "${ssh_opts[@]}" \
   "$destination" \
-  "sysupgrade -T '$remote_path'"
+  "sysupgrade -T '$remote_path' >/dev/null"
+printf 'ok\n'
 
-printf 'Starting sysupgrade -n\n'
+printf 'Starting sysupgrade... '
 
-if ssh "${ssh_opts[@]}" \
+if upgrade_output="$(ssh "${ssh_opts[@]}" \
   "$destination" \
-  "sysupgrade -n '$remote_path'"; then
+  "sysupgrade -n '$remote_path'" 2>&1)"; then
 
-  printf 'Sysupgrade handoff completed.\n'
+  printf 'router is rebooting.\n'
 else
   status=$?
 
   case "$status" in
   246)
     # ubus exits with -10 after sysupgrade stops it, which the shell reports as 246.
-    printf 'Sysupgrade started; ubus closed during router shutdown.\n'
+    printf 'router is rebooting.\n'
     ;;
   255)
-    printf 'SSH connection closed while router is rebooting.\n'
+    printf 'router is rebooting.\n'
     ;;
   *)
+    printf 'failed\n' >&2
+    printf '%s\n' "$upgrade_output" >&2
     printf 'Error: sysupgrade/SSH exited with status %d.\n' "$status" >&2
     exit "$status"
     ;;
