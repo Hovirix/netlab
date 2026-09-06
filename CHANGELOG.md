@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/Hovirix/netlab/compare/v1.1.0...v1.1.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **build:** verify firmware deployment ([#38](https://github.com/Hovirix/netlab/issues/38)) ([feecced](https://github.com/Hovirix/netlab/commit/feecceda4f1f13aa31fda301ea33f98fd17799aa))
+
 ## [1.1.0](https://github.com/Hovirix/netlab/compare/v1.0.1...v1.1.0) (2026-09-01)
 
 
