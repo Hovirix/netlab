@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/Hovirix/netlab/compare/v1.1.1...v1.2.0) (2026-09-22)
+
+
+### Features
+
+* **network:** remove TrueNAS VLAN ([#40](https://github.com/Hovirix/netlab/issues/40)) ([d1d64a3](https://github.com/Hovirix/netlab/commit/d1d64a31f9dc11d13c49ba39a9bb0f0cefe76331))
+
 ## [1.1.1](https://github.com/Hovirix/netlab/compare/v1.1.0...v1.1.1) (2026-09-04)
 
 
