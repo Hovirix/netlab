@@ -32,38 +32,31 @@ vlans:
     dhcp: false
     wan: true
 
-  truenas:
+  homelab:
     id: 30
     gateway: 10.30.0.1
     cidr: 10.30.0.1/24
     dhcp: true
     wan: true
 
-  homelab:
+  kubelab:
     id: 40
     gateway: 10.40.0.1
     cidr: 10.40.0.1/24
     dhcp: true
     wan: true
 
-  kubelab:
+  cyberlab:
     id: 50
     gateway: 10.50.0.1
     cidr: 10.50.0.1/24
     dhcp: true
-    wan: true
-
-  cyberlab:
-    id: 60
-    gateway: 10.60.0.1
-    cidr: 10.60.0.1/24
-    dhcp: true
     wan: false
 
   clients:
-    id: 70
-    gateway: 10.70.0.1
-    cidr: 10.70.0.1/24
+    id: 60
+    gateway: 10.60.0.1
+    cidr: 10.60.0.1/24
     dhcp: true
     wan: true
 
@@ -79,26 +72,22 @@ switch:
 
   vlans:
     management:
+      - lan2:u*
+      - lan3:u*
+      - lan4:u*
       - lan5:u*
 
     proxmox:
       - lan1:t
-      - lan2:t
-
-    truenas:
-      - lan3:u*
 
     homelab:
       - lan1:t
-      - lan2:t
 
     kubelab:
       - lan1:t
-      - lan2:t
 
     cyberlab:
       - lan1:t
-      - lan2:t
 
     clients: []
 
@@ -132,15 +121,15 @@ dhcp:
   static_leases:
     - name: swarm-01
       mac: "02:40:00:00:01:01"
-      ip: 10.40.0.101
+      ip: 10.30.0.101
 
     - name: swarm-02
       mac: "02:40:00:00:01:02"
-      ip: 10.40.0.102
+      ip: 10.30.0.102
 
     - name: swarm-03
       mac: "02:40:00:00:01:03"
-      ip: 10.40.0.103
+      ip: 10.30.0.103
 
 firewall:
   defaults:
@@ -201,22 +190,6 @@ firewall:
       proto: tcp
       port: 22
       reason: Proxmox SSH administration
-
-    - srcs:
-        - management
-        - vpn
-      dest: truenas
-      proto: tcp
-      port: 443
-      reason: TrueNAS HTTPS administration
-
-    - srcs:
-        - management
-        - vpn
-      dest: truenas
-      proto: tcp
-      port: 22
-      reason: TrueNAS SSH administration
 
     - srcs:
         - management
@@ -282,38 +255,7 @@ firewall:
       port: 22
       reason: Docker Swarm node SSH administration
 
-  data_flows:
-    - srcs:
-        - management
-        - vpn
-      dest: truenas
-      proto: tcp
-      port: 2049
-      reason: NFSv4 storage access
-
-    - src: truenas
-      dest: proxmox
-      proto: tcp
-      port: 22
-      reason: Proxmox SSH access from TrueNAS
-
-    - src: proxmox
-      dest: truenas
-      proto: tcp
-      port: 2049
-      reason: NFSv4
-
-    - src: kubelab
-      dest: truenas
-      proto: tcp
-      port: 2049
-      reason: NFSv4
-
-    - src: homelab
-      dest: truenas
-      proto: tcp
-      port: 2049
-      reason: Docker Swarm NFSv4 storage
+  data_flows: []
 
   wan_rules:
     - src: wan

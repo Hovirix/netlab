@@ -25,8 +25,8 @@
 
 ## Topology And Recovery
 
-- Preserve management recovery access: untagged `lan5` is `vlan10`; `lan4` is intentionally unused. Router SSH/HTTPS and AdGuard UI are available from management and VPN; WAN UDP 51820 is WireGuard.
-- `lan1`/`lan2` tag Proxmox, homelab, kubelab, and cyberlab; `lan3` is untagged TrueNAS. Client Wi-Fi maps to `vlan70` with isolation; admin Wi-Fi maps to `vlan10`.
+- Preserve management recovery access: untagged `lan2` through `lan5` are `vlan10`. Router SSH/HTTPS and AdGuard UI are available from management and VPN; WAN UDP 51820 is WireGuard.
+- `lan1` tags Proxmox, homelab, kubelab, and cyberlab. Client Wi-Fi maps to `vlan60` with isolation; admin Wi-Fi maps to `vlan10`.
 - Before deployment, inspect generated `build/files/etc/config/*`. `build/` may hold decrypted secrets, ImageBuilder downloads, and firmware, and must never be committed.
 
 ## Automation
