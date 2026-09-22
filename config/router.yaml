@@ -33,30 +33,30 @@ vlans:
     wan: true
 
   homelab:
+    id: 30
+    gateway: 10.30.0.1
+    cidr: 10.30.0.1/24
+    dhcp: true
+    wan: true
+
+  kubelab:
     id: 40
     gateway: 10.40.0.1
     cidr: 10.40.0.1/24
     dhcp: true
     wan: true
 
-  kubelab:
+  cyberlab:
     id: 50
     gateway: 10.50.0.1
     cidr: 10.50.0.1/24
     dhcp: true
-    wan: true
-
-  cyberlab:
-    id: 60
-    gateway: 10.60.0.1
-    cidr: 10.60.0.1/24
-    dhcp: true
     wan: false
 
   clients:
-    id: 70
-    gateway: 10.70.0.1
-    cidr: 10.70.0.1/24
+    id: 60
+    gateway: 10.60.0.1
+    cidr: 10.60.0.1/24
     dhcp: true
     wan: true
 
@@ -121,15 +121,15 @@ dhcp:
   static_leases:
     - name: swarm-01
       mac: "02:40:00:00:01:01"
-      ip: 10.40.0.101
+      ip: 10.30.0.101
 
     - name: swarm-02
       mac: "02:40:00:00:01:02"
-      ip: 10.40.0.102
+      ip: 10.30.0.102
 
     - name: swarm-03
       mac: "02:40:00:00:01:03"
-      ip: 10.40.0.103
+      ip: 10.30.0.103
 
 firewall:
   defaults:
