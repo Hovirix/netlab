@@ -55,6 +55,12 @@ config interface 'wan6'
 	list dns '{{ $dns }}'
 {{- end }}
 
+config route6
+	option interface 'wan6'
+	option target '::/0'
+	option gateway '{{ $network.route6.gateway }}'
+	option metric '256'
+
 config interface 'wan'
 	option proto 'map'
 	option maptype '{{ $config.network.wan.map_type }}'
