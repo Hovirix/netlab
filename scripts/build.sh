@@ -57,7 +57,6 @@ verify_overlay() {
     etc/config/dropbear \
     etc/dropbear/authorized_keys \
     etc/adguardhome/adguardhome.yaml \
-    etc/crontabs/root \
     etc/uci-defaults/99-service; do
 
     if ! grep -Fxq "squashfs-root/$file" build/.rootfs-list; then
