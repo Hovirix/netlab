@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.request import urlopen
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -13,8 +14,8 @@ import time
 
 CONFIG_FILE = Path("config/router.yaml")
 README_FILE = Path("README.md")
-DOWNLOADS_DIR = Path("build/downloads")
-RELEASE_NOTES_FILE = Path("build/openwrt-release-notes.md")
+DOWNLOADS_DIR = Path(os.environ.get("DOWNLOADS_DIR", "build/downloads"))
+RELEASE_NOTES_FILE = Path(os.environ.get("BUILD_DIR", "build")) / "openwrt-release-notes.md"
 SIGNING_KEY = Path("keys/openwrt-build-system.asc")
 HOST_SUFFIX = "Linux-x86_64"
 DOWNLOAD_TIMEOUT_SECONDS = 60
@@ -200,18 +201,17 @@ def verify_archive_checksum(archive_path, expected_checksum):
 
 
 def update_build_metadata(version, imagebuilder_hash):
-    text = CONFIG_FILE.read_text()
-
-    def replace(key, value):
-        new_text, count = re.subn(
-            rf"^  {key}: .*$", rf"  {key}: {value}", text, count=1, flags=re.M
-        )
-        if count != 1:
-            raise SystemExit(f"missing build.{key} in config/router.yaml")
-        return new_text
-
-    text = replace("openwrt_version", version)
-    text = replace("imagebuilder_hash", imagebuilder_hash)
+    text = subprocess.check_output(
+        [
+            "yq",
+            "-e",
+            "select(.build.openwrt_version != null and .build.imagebuilder_hash != null) | "
+            f".build.openwrt_version = {json.dumps(version)} | "
+            f".build.imagebuilder_hash = {json.dumps(imagebuilder_hash)}",
+            str(CONFIG_FILE),
+        ],
+        text=True,
+    )
 
     readme_text = README_FILE.read_text()
     readme_text, count = re.subn(

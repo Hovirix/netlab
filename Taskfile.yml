@@ -1,36 +1,39 @@
 version: '3'
 
-silent: true
+set: [errexit, nounset, pipefail]
+
+env:
+  BUILD_DIR: '{{.ROOT_DIR}}/build'
+  DOWNLOADS_DIR: '{{.ROOT_DIR}}/build/downloads'
+  OVERLAY_DIR: '{{.ROOT_DIR}}/build/files'
+  ARTIFACTS_DIR: '{{.ROOT_DIR}}/build/artifacts'
 
 tasks:
-  build:
-    desc: Validate, render, and build firmware
-    deps: [validate, render]
-    cmds:
-      - ./scripts/build.sh
-
-  deploy:
-    desc: Deploy firmware to the router
-    prompt: Flash router with sysupgrade -n?
-    cmds:
-      - ./scripts/deploy.sh
-      - task: clean
-
-  update:
-    desc: Update OpenWrt release metadata
-    cmds:
-      - python3 ./scripts/update.py
-
   check:
-    desc: Run non-secret static checks
+    desc: Run static checks
     cmds:
-      - actionlint .github/workflows/*.yml
+      - nix flake check --print-build-logs
 
   render:
     internal: true
-    run: once
-    cmds:
-      - ./scripts/render.sh
+    sources:
+      - config/router.yaml
+      - config/secrets.sops.yaml
+      - templates/**/*.tmpl
+      - scripts/render.sh
+    generates:
+      - build/files/etc/config/network
+      - build/files/etc/config/firewall
+      - build/files/etc/config/dhcp
+      - build/files/etc/config/wireless
+      - build/files/etc/config/dropbear
+      - build/files/etc/adguardhome/adguardhome.yaml
+      - build/files/etc/dropbear/authorized_keys
+      - build/files/etc/uci-defaults/99-service
+    preconditions:
+      - sh: test -r config/secrets.sops.yaml
+        msg: Encrypted secrets file is missing
+    cmd: ./scripts/render.sh
 
   validate:
     internal: true
@@ -38,6 +41,26 @@ tasks:
       - task: render
       - ./scripts/validate.sh
 
-  clean:
+  build:
+    desc: Render, validate and build firmware
     cmds:
-      - rm -rf build
+      - defer: rm -rf "$OVERLAY_DIR"
+      - task: validate
+      - cmd: ./scripts/build.sh
+        timeout: 45m
+
+  deploy:
+    desc: Deploy firmware to router
+    prompt: Flash router with sysupgrade -n?
+    cmds:
+      - task: build
+      - ./scripts/deploy.sh
+      - task: clean
+
+  update:
+    desc: Update OpenWrt
+    cmd: python3 scripts/update.py
+
+  clean:
+    desc: Remove build artifacts
+    cmd: rm -rf "${BUILD_DIR:?}"

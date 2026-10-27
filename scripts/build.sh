@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-downloads_dir="build/downloads"
-imagebuilder_dir="build/imagebuilder"
-artifacts_dir="build/artifacts"
-overlay_dir="build/files"
+downloads_dir="${DOWNLOADS_DIR:?}"
+imagebuilder_dir="${BUILD_DIR:?}/imagebuilder"
+artifacts_dir="${ARTIFACTS_DIR:?}"
+overlay_dir="${OVERLAY_DIR:?}"
 
 config_datasource="config=config/router.yaml"
 
@@ -24,7 +24,7 @@ archive_path="$downloads_dir/$archive"
 artifact_name="openwrt-$openwrt_version-$target-$subtarget-$profile-squashfs-sysupgrade.bin"
 artifact_path="$imagebuilder_dir/bin/targets/$target/$subtarget/$artifact_name"
 
-trap 'rm -f "$archive_path.tmp" build/.rootfs build/.rootfs-list' EXIT
+trap 'rm -f "$archive_path.tmp" "$BUILD_DIR/.rootfs" "$BUILD_DIR/.rootfs-list"' EXIT
 
 download_archive() {
   rm -f "$archive_path.tmp"
@@ -59,7 +59,7 @@ verify_overlay() {
     etc/adguardhome/adguardhome.yaml \
     etc/uci-defaults/99-service; do
 
-    if ! grep -Fxq "squashfs-root/$file" build/.rootfs-list; then
+    if ! grep -Fxq "squashfs-root/$file" "$BUILD_DIR/.rootfs-list"; then
       printf 'Error: sysupgrade image is missing overlay file: %s\n' "$file" >&2
       exit 1
     fi
@@ -99,7 +99,7 @@ tar \
 make -C "$imagebuilder_dir" image \
   PROFILE="$profile" \
   PACKAGES="$packages" \
-  FILES="../files"
+  FILES="$overlay_dir"
 
 if [ ! -f "$artifact_path" ]; then
   printf 'Error: build completed but expected artifact was not produced: %s\n' \
@@ -110,7 +110,7 @@ fi
 if ! tar \
   -xOf "$artifact_path" \
   "sysupgrade-$profile/root" \
-  >build/.rootfs; then
+  >"$BUILD_DIR/.rootfs"; then
 
   printf 'Error: failed to extract root filesystem from: %s\n' \
     "$artifact_path" >&2
@@ -124,7 +124,7 @@ if [ ! -x "$unsquashfs" ]; then
   exit 1
 fi
 
-"$unsquashfs" -l build/.rootfs >build/.rootfs-list
+"$unsquashfs" -l "$BUILD_DIR/.rootfs" >"$BUILD_DIR/.rootfs-list"
 
 verify_overlay
 
