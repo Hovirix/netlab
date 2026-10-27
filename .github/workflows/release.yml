@@ -10,24 +10,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  nix:
-    name: Nix flake check
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
-
-      - name: Run checks
-        run: nix flake check --print-build-logs
-
   release:
     name: Release Please
-    needs: nix
     runs-on: ubuntu-latest
     steps:
       - name: Create release

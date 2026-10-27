@@ -12,6 +12,7 @@ openwrt_version="$(gomplate --datasource "$config_datasource" --in '{{ (ds "conf
 target="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.target }}')"
 subtarget="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.subtarget }}')"
 profile="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.profile }}')"
+# shellcheck disable=SC2016 # $pkg belongs to Gomplate, not Bash.
 packages="$(gomplate --datasource "$config_datasource" --in '{{ range $pkg := (ds "config").build.packages }}{{ $pkg }} {{ end }}')"
 packages="${packages% }"
 expected_hash="$(gomplate --datasource "$config_datasource" --in '{{ (ds "config").build.imagebuilder_hash }}')"

@@ -38,6 +38,7 @@ scp_opts=(
 
 if [ ! -f "$artifact_path" ]; then
   printf 'Error: expected sysupgrade image not found: %s\n' "$artifact_path" >&2
+  # shellcheck disable=SC2016 # Backticks are literal command markup.
   printf 'Run `task build` first.\n' >&2
   exit 1
 fi
@@ -51,6 +52,7 @@ scp "${scp_opts[@]}" \
 printf 'ok\n'
 
 printf 'Validating firmware... '
+# shellcheck disable=SC2029 # The fixed remote path must expand locally.
 ssh "${ssh_opts[@]}" \
   "$destination" \
   "sysupgrade -T '$remote_path' >/dev/null"
@@ -58,6 +60,7 @@ printf 'ok\n'
 
 printf 'Starting sysupgrade... '
 
+# shellcheck disable=SC2029 # The fixed remote path must expand locally.
 if upgrade_output="$(ssh "${ssh_opts[@]}" \
   "$destination" \
   "sysupgrade -n '$remote_path'" 2>&1)"; then

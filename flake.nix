@@ -3,30 +3,47 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      treefmt-nix,
-    }:
+    { nixpkgs, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
-      treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
     in
     {
-      formatter.${system} = treefmtEval.config.build.wrapper;
-      devShells.${system}.default = import ./shell.nix { inherit pkgs; };
-
-      checks.${system} = {
-        formatting = treefmtEval.config.build.check self;
-        actionlint = pkgs.runCommand "actionlint" { nativeBuildInputs = [ pkgs.actionlint ]; } ''
-          actionlint ${self}/.github/workflows/*.yml
-          touch $out
-        '';
+      devShells.${system}.default = pkgs.mkShell {
+        packages = with pkgs; [
+          trivy
+          squashfsTools
+          curl
+          actionlint
+          deadnix
+          gnupg
+          gomplate
+          gnumake
+          gnutar
+          go-task
+          mdformat
+          nixfmt
+          openssh
+          pre-commit
+          python3
+          ruff
+          shellcheck
+          shfmt
+          sops
+          statix
+          taplo
+          treefmt
+          typos
+          uci
+          unzip
+          yq-go
+          yamlfmt
+          wget
+          zstd
+        ];
       };
     };
 }

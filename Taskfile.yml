@@ -10,9 +10,14 @@ env:
 
 tasks:
   check:
-    desc: Run static checks
+    desc: Run static checks and lint
     cmds:
-      - nix flake check --print-build-logs
+      - deadnix --fail .
+      - statix check .
+      - ruff check .
+      - shellcheck scripts/*.sh
+      - typos --exclude 'config/*.sops.yaml' --exclude 'keys/*.asc' --exclude '*.lock' --exclude LICENSE
+      - actionlint
 
   render:
     internal: true

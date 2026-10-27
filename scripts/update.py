@@ -15,12 +15,16 @@ import time
 CONFIG_FILE = Path("config/router.yaml")
 README_FILE = Path("README.md")
 DOWNLOADS_DIR = Path(os.environ.get("DOWNLOADS_DIR", "build/downloads"))
-RELEASE_NOTES_FILE = Path(os.environ.get("BUILD_DIR", "build")) / "openwrt-release-notes.md"
+RELEASE_NOTES_FILE = (
+    Path(os.environ.get("BUILD_DIR", "build")) / "openwrt-release-notes.md"
+)
 SIGNING_KEY = Path("keys/openwrt-build-system.asc")
 HOST_SUFFIX = "Linux-x86_64"
 DOWNLOAD_TIMEOUT_SECONDS = 60
 DOWNLOAD_ATTEMPTS = 3
-OPENWRT_RELEASES_URL = "https://api.github.com/repos/openwrt/openwrt/releases?per_page=100"
+OPENWRT_RELEASES_URL = (
+    "https://api.github.com/repos/openwrt/openwrt/releases?per_page=100"
+)
 MAX_PR_BODY_BYTES = 60_000
 
 
@@ -187,7 +191,11 @@ def verify_signed_checksums(base_url, archive, checksums_path, signature_path):
 
     for line in checksums_path.read_text().splitlines():
         checksum, separator, filename = line.partition(" *")
-        if separator and filename == archive and re.fullmatch(r"[0-9a-f]{64}", checksum):
+        if (
+            separator
+            and filename == archive
+            and re.fullmatch(r"[0-9a-f]{64}", checksum)
+        ):
             return checksum
     raise SystemExit(f"signed sha256sums does not contain {archive}")
 
