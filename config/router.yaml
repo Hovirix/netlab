@@ -314,53 +314,6 @@ wireless:
       network: management
       isolate: false
 
-adguardhome:
-  http_address: 10.10.0.1:3000
-
-  dns:
-    bind_hosts:
-      - 0.0.0.0
-
-    port: 53
-
-    upstream_dns:
-      - https://dns.adguard-dns.com/dns-query
-      - https://dns.quad9.net/dns-query
-      - https://family.dns.mullvad.net/dns-query
-
-    bootstrap_dns:
-      - 1.1.1.1
-      - 9.9.9.9
-
-    upstream_mode: parallel
-    use_http3_upstreams: true
-    cache_enabled: true
-    cache_size: 4194304
-    cache_optimistic: true
-    enable_dnssec: true
-    serve_http3: true
-
-  filters:
-    - enabled: true
-      url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt
-      name: "HaGeZi's Threat Intelligence Feeds DNS Blocklist"
-      id: 1770480370
-
-    - enabled: true
-      url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/spam-tlds.txt
-      name: "HaGeZi's The World's Most Abused TLDs"
-      id: 1770480371
-
-    - enabled: true
-      url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/ultimate.txt
-      name: "HaGeZi's Ultimate DNS Blocklist"
-      id: 1770480372
-
-    - enabled: true
-      url: https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adguard/dns-rebind-protection.txt
-      name: "HaGeZi's DNS Rebind Protection"
-      id: 1770480373
-
 dropbear:
   name: main
   password_auth: "off"
