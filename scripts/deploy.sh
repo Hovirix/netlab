@@ -17,7 +17,7 @@ router_user="$(config_value router.user)"
 router_port="$(config_value router.port)"
 
 artifact_name="openwrt-$openwrt_version-$target-$subtarget-$profile-squashfs-sysupgrade.bin"
-artifact_path="build/artifacts/$artifact_name"
+artifact_path="${ARTIFACTS_DIR:?}/$artifact_name"
 
 remote_path="/tmp/sysupgrade.bin"
 destination="$router_user@$router_host"
