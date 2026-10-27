@@ -6,7 +6,7 @@
 
 [![Release](https://img.shields.io/github/v/release/Hovirix/netlab?label=release)](https://github.com/Hovirix/netlab/releases)
 [![Check](https://github.com/Hovirix/netlab/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/Hovirix/netlab/actions/workflows/check.yml)
-[![OpenWrt](https://img.shields.io/badge/OpenWrt-25.12.4-blue?logo=openwrt)](https://downloads.openwrt.org/releases/25.12.4/)
+[![OpenWrt](https://img.shields.io/badge/OpenWrt-25.12.6-blue?logo=openwrt)](https://downloads.openwrt.org/releases/25.12.6/)
 
 </div>
 
