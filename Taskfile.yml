@@ -21,24 +21,11 @@ tasks:
 
   render:
     internal: true
-    sources:
-      - config/router.yaml
-      - config/secrets.sops.yaml
-      - templates/**/*.tmpl
-      - scripts/render.sh
-    generates:
-      - build/files/etc/config/network
-      - build/files/etc/config/firewall
-      - build/files/etc/config/dhcp
-      - build/files/etc/config/wireless
-      - build/files/etc/config/dropbear
-      - build/files/etc/adguardhome/adguardhome.yaml
-      - build/files/etc/dropbear/authorized_keys
-      - build/files/etc/uci-defaults/99-service
-    preconditions:
-      - sh: test -r config/secrets.sops.yaml
-        msg: Encrypted secrets file is missing
-    cmd: ./scripts/render.sh
+    cmds:
+      - cmd: cat tests/fixtures/secrets.yaml | ./scripts/render.sh
+        if: '[ "${CI:-}" = "true" ]'
+      - cmd: sops -d config/secrets.sops.yaml | ./scripts/render.sh
+        if: '[ "${CI:-}" != "true" ]'
 
   validate:
     internal: true
