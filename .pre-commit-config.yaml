@@ -1,8 +1,8 @@
 repos:
   - repo: local
     hooks:
-      - id: nix-fmt
-        name: nix fmt
-        entry: nix fmt
+      - id: treefmt
+        name: treefmt
+        entry: treefmt
         language: system
         pass_filenames: false

@@ -1,0 +1,29 @@
+[formatter.mdformat]
+command = "mdformat"
+includes = ["*.md"]
+excludes = ["CHANGELOG.md"]
+
+[formatter.nixfmt]
+command = "nixfmt"
+includes = ["*.nix"]
+
+[formatter.ruff]
+command = "ruff"
+includes = ["*.py", "*.pyi"]
+options = ["format"]
+
+[formatter.shfmt]
+command = "shfmt"
+includes = ["*.sh", "*.bash", "*.envrc", "*.envrc.*"]
+options = ["-w", "-i", "2", "-s"]
+
+[formatter.taplo]
+command = "taplo"
+includes = ["*.toml"]
+options = ["format"]
+
+[formatter.yamlfmt]
+command = "yamlfmt"
+includes = ["*.yaml", "*.yml"]
+excludes = ["config/*.sops.yaml"]
+options = ["-formatter", "retain_line_breaks_single=true"]

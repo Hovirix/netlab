@@ -96,7 +96,7 @@ Network state is declared as code rather than duplicated in static documentation
 
 ```bash
 task             # List available commands
-task check       # Run static checks
+task check       # Run static checks and lint
 task build       # Render, validate, and build firmware
 task deploy      # Build and flash the router
 task update      # Update OpenWrt build metadata
@@ -108,6 +108,8 @@ A reproducible development environment is provided through [Nix](https://nixos.o
 ```bash
 nix develop
 ```
+
+CI builds the image with `tests/fixtures/secrets.yaml` instead of SOPS secrets. Reproduce locally with `CI=true task build` inside the development shell. These images contain public test credentials: **never deploy them**. CI does not upload firmware.
 
 Rendering, validation, firmware generation, deployment, and recovery are automated to keep changes and incident recovery fast and repeatable. AI agent context and domain-specific skills provide queryable knowledge to inspect network policy, diagnose incidents, and guide the appropriate recovery workflow.
 

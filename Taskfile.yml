@@ -1,36 +1,31 @@
 version: '3'
 
-silent: true
+set: [errexit, nounset, pipefail]
+
+env:
+  BUILD_DIR: '{{.ROOT_DIR}}/build'
+  DOWNLOADS_DIR: '{{.ROOT_DIR}}/build/downloads'
+  OVERLAY_DIR: '{{.ROOT_DIR}}/build/files'
+  ARTIFACTS_DIR: '{{.ROOT_DIR}}/build/artifacts'
 
 tasks:
-  build:
-    desc: Validate, render, and build firmware
-    deps: [validate, render]
-    cmds:
-      - ./scripts/build.sh
-
-  deploy:
-    desc: Deploy firmware to the router
-    prompt: Flash router with sysupgrade -n?
-    cmds:
-      - ./scripts/deploy.sh
-      - task: clean
-
-  update:
-    desc: Update OpenWrt release metadata
-    cmds:
-      - python3 ./scripts/update.py
-
   check:
-    desc: Run non-secret static checks
+    desc: Run static checks and lint
     cmds:
-      - actionlint .github/workflows/*.yml
+      - deadnix --fail .
+      - statix check .
+      - ruff check .
+      - shellcheck scripts/*.sh
+      - typos --exclude 'config/*.sops.yaml' --exclude 'keys/*.asc' --exclude '*.lock' --exclude LICENSE
+      - actionlint
 
   render:
     internal: true
-    run: once
     cmds:
-      - ./scripts/render.sh
+      - cmd: cat tests/fixtures/secrets.yaml | ./scripts/render.sh
+        if: '[ "${CI:-}" = "true" ]'
+      - cmd: sops -d config/secrets.sops.yaml | ./scripts/render.sh
+        if: '[ "${CI:-}" != "true" ]'
 
   validate:
     internal: true
@@ -38,6 +33,26 @@ tasks:
       - task: render
       - ./scripts/validate.sh
 
-  clean:
+  build:
+    desc: Render, validate and build firmware
     cmds:
-      - rm -rf build
+      - defer: rm -rf "$OVERLAY_DIR"
+      - task: validate
+      - cmd: ./scripts/build.sh
+        timeout: 45m
+
+  deploy:
+    desc: Deploy firmware to router
+    prompt: Flash router with sysupgrade -n?
+    cmds:
+      - task: build
+      - ./scripts/deploy.sh
+      - task: clean
+
+  update:
+    desc: Update OpenWrt
+    cmd: python3 scripts/update.py
+
+  clean:
+    desc: Remove build artifacts
+    cmd: rm -rf "${BUILD_DIR:?}"

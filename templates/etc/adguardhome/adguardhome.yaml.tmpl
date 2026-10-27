@@ -1,0 +1,63 @@
+{{- $secrets := ds "secrets" -}}
+{{- $user := $secrets.adguardhome.user -}}
+
+http:
+  address: 10.10.0.1:3000
+
+users:
+  - name: "{{ index $user "name" }}"
+    password: "{{ index $user "password_hash" }}"
+
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 53
+  upstream_dns:
+    - https://dns.quad9.net/dns-query
+    - https://family.adguard-dns.com/dns-query
+    - https://root.hagezi.org/dns-query
+  bootstrap_dns:
+    - 9.9.9.9
+    - 149.112.112.112
+    - 94.140.14.14
+    - 94.140.15.15
+  upstream_mode: load_balance
+  cache_enabled: true
+  cache_size: 4194304
+  cache_optimistic: true
+  enable_dnssec: true
+
+filtering:
+  protection_enabled: true
+  filtering_enabled: true
+  blocking_mode: refused
+
+querylog:
+  enabled: true
+  file_enabled: true
+  interval: 2160h
+  size_memory: 1000
+
+statistics:
+  enabled: true
+  interval: 24h
+
+filters:
+  - enabled: true
+    url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt
+    name: "HaGeZi's Threat Intelligence Feeds DNS Blocklist"
+    id: 1770480370
+  - enabled: true
+    url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/spam-tlds.txt
+    name: "HaGeZi's The World's Most Abused TLDs"
+    id: 1770480371
+  - enabled: true
+    url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/ultimate.txt
+    name: "HaGeZi's Ultimate DNS Blocklist"
+    id: 1770480372
+  - enabled: true
+    url: https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adguard/dns-rebind-protection.txt
+    name: "HaGeZi's DNS Rebind Protection"
+    id: 1770480373
+
+schema_version: 32
