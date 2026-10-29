@@ -96,6 +96,12 @@ config rule
 	option dest '{{ $dest }}'
 {{- end }}
 	option proto '{{ index $rule "proto" }}'
+{{- if index $rule "src_ip" }}
+	option src_ip '{{ index $rule "src_ip" }}'
+{{- end }}
+{{- if index $rule "dest_ip" }}
+	option dest_ip '{{ index $rule "dest_ip" }}'
+{{- end }}
 {{- if index $rule "src_port" }}
 	option src_port '{{ index $rule "src_port" }}'
 {{- end }}
