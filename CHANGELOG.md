@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/Hovirix/netlab/compare/v1.1.1...v1.2.0) (2026-10-29)
+
+
+### Features
+
+* **ci:** build firmware with synthetic secrets ([e510411](https://github.com/Hovirix/netlab/commit/e5104117359be19b48eca7d7185acc465a5d7abc))
+* **firewall:** allow PVE access to internal Traefik HTTPS ([#47](https://github.com/Hovirix/netlab/issues/47)) ([c6e8f35](https://github.com/Hovirix/netlab/commit/c6e8f35603f0c2fc1d66f4abd5c8b9c384c44488))
+* **network:** remove TrueNAS VLAN ([#40](https://github.com/Hovirix/netlab/issues/40)) ([d1d64a3](https://github.com/Hovirix/netlab/commit/d1d64a31f9dc11d13c49ba39a9bb0f0cefe76331))
+
+
+### Bug Fixes
+
+* **dhcp:** remove stale Swarm static leases ([#45](https://github.com/Hovirix/netlab/issues/45)) ([86d17da](https://github.com/Hovirix/netlab/commit/86d17da6441494ac96cc9950a16ccaf71a1de597))
+* **network:** prevent ISP IPv6 route expiration ([#44](https://github.com/Hovirix/netlab/issues/44)) ([210e60f](https://github.com/Hovirix/netlab/commit/210e60f33ebdfdb9e3bb85be849c7b6fb604c5db))
+
 ## [1.1.1](https://github.com/Hovirix/netlab/compare/v1.1.0...v1.1.1) (2026-09-04)
 
 
