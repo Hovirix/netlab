@@ -1,3 +1,4 @@
+{{- $config := ds "config" -}}
 {{- $secrets := ds "secrets" -}}
 {{- $user := $secrets.adguardhome.user -}}
 
@@ -31,6 +32,11 @@ filtering:
   protection_enabled: true
   filtering_enabled: true
   blocking_mode: refused
+  rewrites:
+{{- range $rewrite := $config.dns.rewrites }}
+    - domain: "{{ $rewrite.domain }}"
+      answer: "{{ $rewrite.answer }}"
+{{- end }}
 
 querylog:
   enabled: true
