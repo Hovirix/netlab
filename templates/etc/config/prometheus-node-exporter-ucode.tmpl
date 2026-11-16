@@ -1,0 +1,7 @@
+{{- $config := ds "config" -}}
+config prometheus-node-exporter-ucode 'main'
+	option listen_interface 'vlan{{ $config.vlans.homelab.id }}'
+	option listen_port '{{ $config.observability.metrics_port }}'
+
+config collector 'wifi'
+	option stations '1'

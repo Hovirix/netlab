@@ -9,4 +9,4 @@ gomplate \
   --input-dir templates \
   --output-map '{{ env.Getenv "OVERLAY_DIR" }}/{{ strings.TrimSuffix ".tmpl" .in }}'
 
-chmod 700 "$OVERLAY_DIR/etc/uci-defaults/99-service"
+chmod 700 "$OVERLAY_DIR/etc/uci-defaults/98-observability" "$OVERLAY_DIR/etc/uci-defaults/99-service"

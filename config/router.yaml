@@ -10,6 +10,11 @@ build:
     - etherwake
     - irqbalance
     - map
+    - prometheus-node-exporter-ucode
+    - prometheus-node-exporter-ucode-openwrt
+    - prometheus-node-exporter-ucode-snmp6
+    - prometheus-node-exporter-ucode-wifi
+    - prometheus-node-exporter-ucode-wireguard
     - wireguard-tools
 
   router:
@@ -133,6 +138,11 @@ dhcp:
 
   static_leases: []
 
+observability:
+  metrics_port: 9101
+  log_host: 10.30.0.100
+  log_port: 1514
+
 firewall:
   defaults:
     input: REJECT
@@ -140,6 +150,27 @@ firewall:
     forward: REJECT
 
   router_access:
+    - src: homelab
+      src_ip: 10.30.0.101
+      dest_ip: 10.30.0.1
+      proto: tcp
+      port: 9101
+      reason: OpenWrt metrics from swarm-01
+
+    - src: homelab
+      src_ip: 10.30.0.102
+      dest_ip: 10.30.0.1
+      proto: tcp
+      port: 9101
+      reason: OpenWrt metrics from swarm-02
+
+    - src: homelab
+      src_ip: 10.30.0.103
+      dest_ip: 10.30.0.1
+      proto: tcp
+      port: 9101
+      reason: OpenWrt metrics from swarm-03
+
     - src: wan
       proto: udp
       port: 51820
@@ -347,6 +378,7 @@ services:
   enable:
     - adguardhome
     - irqbalance
+    - prometheus-node-exporter-ucode
 
   disable:
     - odhcpd
