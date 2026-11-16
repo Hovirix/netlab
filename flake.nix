@@ -38,6 +38,7 @@
           treefmt
           typos
           uci
+          ucode
           unzip
           yq-go
           yamlfmt
