@@ -2,6 +2,15 @@
 #!/bin/sh
 set -e
 
+# dnsmasq updates this file in place; expose only this file read-only in the jail.
+exporter=/etc/init.d/prometheus-node-exporter-ucode
+if ! grep -Fq 'procd_add_jail_mount /tmp/dhcp.leases' "$exporter"; then
+	grep -Fq 'procd_add_jail_mount "/etc/config"' "$exporter"
+	sed -i '/procd_add_jail_mount "\/etc\/config"/a\
+	[ -e /tmp/dhcp.leases ] || touch /tmp/dhcp.leases\
+	procd_add_jail_mount /tmp/dhcp.leases' "$exporter"
+fi
+
 # Merge logging settings without replacing board defaults or NTP configuration.
 uci batch <<'EOF'
 set system.@system[0].log_remote='1'

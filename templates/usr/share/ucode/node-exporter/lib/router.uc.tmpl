@@ -1,0 +1,142 @@
+{{- $config := ds "config" -}}
+import { request, 'const' as wlconst } from 'nl80211';
+
+const names = {
+{{- range $name, $vlan := $config.vlans }}
+	'vlan{{ $vlan.id }}': {{ printf "%q" (strings.Title $name) }},
+{{- end }}
+	wan: 'WAN IPv4',
+	wan6: 'WAN IPv6',
+	{{ $config.network.vpn.name }}: 'WireGuard',
+};
+
+function networks() {
+	const dump = ubus.call('network.interface', 'dump');
+	if (type(dump?.interface) != 'array')
+		return false;
+
+	const up = gauge('openwrt_network_up');
+	const uptime = gauge('openwrt_network_uptime_seconds');
+	const info = gauge('openwrt_network_info');
+	const mapping = gauge('openwrt_network_device_info');
+	const address = gauge('openwrt_network_address_info');
+	for (let net in dump.interface) {
+		const labels = { network: net.interface };
+		up(labels, net.up ? 1 : 0);
+		uptime(labels, net.up ? (net.uptime ?? 0) : 0);
+		info({ network: net.interface, name: names[net.interface] ?? net.interface,
+			protocol: net.proto ?? '', device: net.device ?? '',
+			l3_device: net.l3_device ?? '' }, 1);
+		for (let device in uniq([net.device, net.l3_device])) {
+			if (device)
+				mapping({ device, network: net.interface,
+					name: names[net.interface] ?? net.interface }, 1);
+		}
+		if (!net.up)
+			continue;
+		for (let family in ['ipv4', 'ipv6']) {
+			for (let addr in net[family + '-address'] ?? [])
+				address({ network: net.interface, family, address: addr.address,
+					prefix_length: '' + addr.mask }, 1);
+		}
+	}
+	return true;
+}
+
+function leases() {
+	const data = fs.readfile('/tmp/dhcp.leases');
+	if (data == null)
+		return false;
+
+	const info = gauge('openwrt_dhcp_lease_info', 'Valid DHCPv4 leases; not device reachability.');
+	const expiry = gauge('openwrt_dhcp_lease_expiry_timestamp_seconds', 'Unix expiry time; zero means permanent.');
+	let count = 0;
+	const now = time();
+	for (let line in split(data, '\n')) {
+		const fields = split(trim(line), /\s+/);
+		// dnsmasq may also store DUIDs and DHCPv6 records in this file.
+		if (length(fields) != 5 || !match(fields[0], /^[0-9]+$/) ||
+			!match(fields[1], /^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$/) ||
+			!match(fields[2], /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/))
+			continue;
+		const expires = +fields[0];
+		if (expires != 0 && expires <= now)
+			continue;
+		const labels = { mac: lc(fields[1]), ip: fields[2],
+			hostname: fields[3] == '*' ? '' : fields[3] };
+		info(labels, 1);
+		expiry(labels, expires);
+		count++;
+	}
+	gauge('openwrt_dhcp_active_leases', 'Unexpired or permanent DHCPv4 leases; not online clients.')(null, count);
+	return true;
+}
+
+function wireless() {
+	const radios = ubus.call('network.wireless', 'status');
+	if (type(radios) != 'object')
+		return false;
+
+	const frequency = gauge('openwrt_wifi_frequency_hertz');
+	const channel = gauge('openwrt_wifi_channel');
+	const width = gauge('openwrt_wifi_channel_width_megahertz');
+	const info = gauge('openwrt_wifi_channel_info');
+	const center = gauge('openwrt_wifi_center_frequency_hertz');
+	// Linux nl80211_chan_width enum; preserve 80+80 as a distinct mode.
+	const widths = [20, 20, 40, 80, 160, 160, 5, 10, 1, 2, 4, 8, 16, 320];
+	let ok = true;
+	for (let radio, status in radios) {
+		if (!status.up)
+			continue;
+		for (let iface in status.interfaces ?? []) {
+			const runtime = request(wlconst.NL80211_CMD_GET_INTERFACE, 0, { dev: iface.ifname });
+			if (!runtime?.wiphy_freq || runtime.channel_width == null ||
+				widths[runtime.channel_width] == null) {
+				ok = false;
+				continue;
+			}
+			const labels = { radio, ifname: iface.ifname };
+			const mhz = runtime.wiphy_freq;
+			frequency(labels, mhz * 1000000);
+			width(labels, widths[runtime.channel_width]);
+			info({ radio, ifname: iface.ifname,
+				width: runtime.channel_width == 4 ? '80+80' : '' + widths[runtime.channel_width] }, 1);
+			let number = null;
+			if (mhz == 2484)
+				number = 14;
+			else if (mhz >= 2412 && mhz <= 2472)
+				number = (mhz - 2407) / 5;
+			else if (mhz >= 4910 && mhz <= 4980)
+				number = (mhz - 4000) / 5;
+			else if (mhz >= 5000 && mhz < 5925)
+				number = (mhz - 5000) / 5;
+			else if (mhz == 5935)
+				number = 2;
+			else if (mhz >= 5955 && mhz <= 7115)
+				number = (mhz - 5950) / 5;
+			if (number != null)
+				channel(labels, number);
+			for (let segment in [1, 2]) {
+				const freq = runtime['center_freq' + segment];
+				if (freq)
+					center({ radio, ifname: iface.ifname, segment: '' + segment }, freq * 1000000);
+			}
+		}
+	}
+	return ok;
+}
+
+let ok = true;
+const source_success = gauge('openwrt_router_source_success');
+for (let source, collect in { networks, leases, wireless }) {
+	let success = false;
+	try {
+		success = collect();
+	}
+	catch (e) {
+		warn(`router collector ${source}: ${e.message}\n`);
+	}
+	source_success({ source }, success ? 1 : 0);
+	ok = ok && success;
+}
+return ok;

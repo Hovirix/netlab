@@ -60,7 +60,8 @@ verify_overlay() {
     etc/dropbear/authorized_keys \
     etc/adguardhome/adguardhome.yaml \
     etc/uci-defaults/98-observability \
-    etc/uci-defaults/99-service; do
+    etc/uci-defaults/99-service \
+    usr/share/ucode/node-exporter/lib/router.uc; do
 
     if ! grep -Fxq "squashfs-root/$file" "$BUILD_DIR/.rootfs-list"; then
       printf 'Error: sysupgrade image is missing overlay file: %s\n' "$file" >&2

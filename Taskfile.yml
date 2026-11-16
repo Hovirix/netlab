@@ -16,6 +16,7 @@ tasks:
       - statix check .
       - ruff check .
       - shellcheck scripts/*.sh
+      - python3 -m unittest discover -s tests
       - typos --exclude 'config/*.sops.yaml' --exclude 'keys/*.asc' --exclude '*.lock' --exclude LICENSE
       - actionlint
 
