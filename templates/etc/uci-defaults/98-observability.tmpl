@@ -1,0 +1,14 @@
+{{- $config := ds "config" -}}
+#!/bin/sh
+set -e
+
+# Merge logging settings without replacing board defaults or NTP configuration.
+uci batch <<'EOF'
+set system.@system[0].log_remote='1'
+set system.@system[0].log_ip='{{ $config.observability.log_host }}'
+set system.@system[0].log_port='{{ $config.observability.log_port }}'
+set system.@system[0].log_proto='tcp'
+set system.@system[0].log_trailer_null='0'
+commit system
+EOF
+/etc/init.d/log restart
